@@ -1,0 +1,8 @@
+coreo — behaviour scripts to motion clips for Jumper
+Copyright 2026 Zymbiotek
+
+This product includes material derived from KingKong Robotics' Jumper
+(https://github.com/KingKongRobotics/jumper, Apache-2.0):
+  - robot.json: joint names, HOME pose and joint ranges exported from its MJCF;
+  - posturas/base.toml: frames of its committed gesture clips (hello, bow, paw, salute).
+The bridge scripts in puente/ import Jumper's own tools at run time; no code is copied.

@@ -13,6 +13,11 @@
 //! @8   fin
 //! ```
 //!
+//! Con `musica <pulsos.json>` (el que escribe `zym-compas pulsos`) en lugar de `pulso`,
+//! `@8` es el octavo pulso REAL de la pista, siga o no un tempo fijo; las duraciones
+//! (`en`, `cada`) van en pulsos del tempo medio. El clip empieza en el primer pulso y
+//! guarda en `musica_desfase` dónde cae en la pista, para alinear el vídeo.
+//!
 //! Todo empieza en HOME. Un movimiento parte de donde esté la articulación cuando
 //! empieza, así que dos órdenes que se solapan se encadenan en vez de saltar.
 
@@ -57,6 +62,8 @@ pub struct Linea {
 #[derive(Debug, Default)]
 pub struct Guion {
     pub pulso: Option<f64>,
+    /// Los pulsos de la pista (segundos en la pista), si el guion va sobre una música.
+    pub pulsos_musica: Option<Vec<f64>>,
     pub lineas: Vec<Linea>,
 }
 
@@ -77,10 +84,38 @@ impl Guion {
             _ => x,
         })
     }
+
+    /// Un instante del guion a segundos: como `segundos`, pero con música un número a
+    /// secas es un pulso de la pista (interpolado entre dos, extrapolado al tempo medio
+    /// después del último), contado desde el primero.
+    fn instante(&self, s: &str) -> Result<f64, String> {
+        let Some(p) = &self.pulsos_musica else { return self.segundos(s) };
+        if s.ends_with('s') {
+            return self.segundos(s);
+        }
+        let b: f64 = s.parse().map_err(|_| format!("«{s}» no es un tiempo"))?;
+        if b < 0.0 {
+            return Err(format!("tiempo negativo «{s}»"));
+        }
+        let i = b.floor() as usize;
+        let t = if i + 1 < p.len() {
+            p[i] + (b - i as f64) * (p[i + 1] - p[i])
+        } else {
+            p[p.len() - 1] + (b - (p.len() - 1) as f64) * 60.0 / self.pulso.unwrap()
+        };
+        Ok(t - p[0])
+    }
 }
 
-/// Lee el texto de un guion. Los errores llevan el número de línea delante.
-pub fn leer(texto: &str) -> Result<Guion, String> {
+#[derive(serde::Deserialize)]
+struct Pulsos {
+    bpm: f64,
+    pulsos: Vec<f64>,
+}
+
+/// Lee el texto de un guion; `dir` es su carpeta, desde la que se buscan los ficheros que
+/// nombra. Los errores llevan el número de línea delante.
+pub fn leer(texto: &str, dir: &std::path::Path) -> Result<Guion, String> {
     let mut g = Guion::default();
     for (i, crudo) in texto.lines().enumerate() {
         let n = i + 1;
@@ -98,8 +133,22 @@ pub fn leer(texto: &str) -> Result<Guion, String> {
             g.pulso = Some(bpm);
             continue;
         }
+        if p[0] == "musica" {
+            let f = dir.join(p.get(1).ok_or_else(|| err("musica <pulsos.json>".into()))?);
+            let texto = std::fs::read_to_string(&f).map_err(|e| err(format!("{}: {e}", f.display())))?;
+            let ps: Pulsos = serde_json::from_str(&texto).map_err(|e| err(format!("{}: {e}", f.display())))?;
+            if !g.lineas.is_empty() || g.pulso.is_some() {
+                return Err(err("`musica` va antes de la primera orden y en lugar de `pulso`".into()));
+            }
+            if ps.pulsos.len() < 2 {
+                return Err(err(format!("{}: menos de dos pulsos", f.display())));
+            }
+            g.pulso = Some(ps.bpm);
+            g.pulsos_musica = Some(ps.pulsos);
+            continue;
+        }
         let t = p[0].strip_prefix('@').ok_or_else(|| err("una orden empieza con @<tiempo>".into()))?;
-        let t = g.segundos(t).map_err(err)?;
+        let t = g.instante(t).map_err(err)?;
         let orden = leer_orden(&g, &p[1..]).map_err(err)?;
         g.lineas.push(Linea { n, t, orden });
     }
@@ -158,6 +207,8 @@ pub struct Clip {
     pub pulso: Option<f64>,
     /// Instantes de cada pulso, en segundos, hasta el final.
     pub pulsos: Vec<f64>,
+    /// Con música: segundo de la pista en el que empieza el clip (su primer pulso).
+    pub musica_desfase: Option<f64>,
     pub q: Vec<Vec<f64>>,
     pub cara: Vec<(f64, String)>,
     pub sonidos: Vec<(f64, String)>,
@@ -257,9 +308,10 @@ pub fn compilar(g: &Guion, robot: &Robot) -> Result<Clip, String> {
             "demasiado rápido: {vel_max:.1} rad/s en {vel_max_en} (límite {VEL_MAX}); alarga el `en` o el `cada`"
         ));
     }
-    let pulsos = match g.pulso {
-        Some(bpm) => (0..).map(|i| i as f64 * 60.0 / bpm).take_while(|t| *t <= fin + 1e-9).collect(),
-        None => Vec::new(),
+    let pulsos = match (&g.pulsos_musica, g.pulso) {
+        (Some(p), _) => p.iter().map(|t| t - p[0]).take_while(|t| *t <= fin + 1e-9).collect(),
+        (None, Some(bpm)) => (0..).map(|i| i as f64 * 60.0 / bpm).take_while(|t| *t <= fin + 1e-9).collect(),
+        (None, None) => Vec::new(),
     };
     Ok(Clip {
         joints: robot.joints.clone(),
@@ -267,6 +319,7 @@ pub fn compilar(g: &Guion, robot: &Robot) -> Result<Clip, String> {
         duracion: fin,
         pulso: g.pulso,
         pulsos,
+        musica_desfase: g.pulsos_musica.as_ref().map(|p| p[0]),
         q,
         cara,
         sonidos,
@@ -280,14 +333,25 @@ mod pruebas {
 
     #[test]
     fn los_tiempos_van_en_pulsos_salvo_con_s() {
-        let g = leer("pulso 120\n@2 cara a\n@1.5s cara b\n@3 fin\n").unwrap();
+        let g = leer("pulso 120\n@2 cara a\n@1.5s cara b\n@3 fin\n", std::path::Path::new(".")).unwrap();
         assert_eq!(g.lineas[0].t, 1.0); // 2 pulsos a 120 bpm
         assert_eq!(g.lineas[1].t, 1.5);
     }
 
     #[test]
     fn sin_fin_es_un_error() {
-        assert!(leer("@0 cara a\n").is_err());
+        assert!(leer("@0 cara a\n", std::path::Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn con_musica_un_numero_es_un_pulso_real_de_la_pista() {
+        let dir = std::env::temp_dir().join(format!("coreo-prueba-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        // Un tempo que se acelera: el pulso 2 cae a 1.0 s de la pista y no a 2 x 60/100.
+        std::fs::write(dir.join("p.json"), r#"{"bpm": 100, "pulsos": [0.5, 1.0, 1.5], "compases": [0.5]}"#).unwrap();
+        let g = leer("musica p.json\n@1.5 cara a\n@3 fin\n", &dir).unwrap();
+        assert!((g.lineas[0].t - 0.75).abs() < 1e-9); // entre el pulso 1 (0.5) y el 2 (1.0), desde 0.5
+        assert!((g.lineas[1].t - (1.0 + 0.6)).abs() < 1e-9); // pasado el último, al tempo medio
     }
 
     #[test]

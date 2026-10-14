@@ -49,7 +49,8 @@ fn run(args: &[String]) -> Result<(), String> {
             let src = args.get(1).ok_or("falta el guion: coreo compilar <guion> -o <clip.json>")?;
             let dest = opt(args, "-o", "clip.json");
             let texto = std::fs::read_to_string(src).map_err(|e| format!("{src}: {e}"))?;
-            let g = guion::leer(&texto).map_err(|e| format!("{src}:{e}"))?;
+            let dir = std::path::Path::new(src).parent().unwrap_or(std::path::Path::new("."));
+            let g = guion::leer(&texto, dir).map_err(|e| format!("{src}:{e}"))?;
             let clip = guion::compilar(&g, &robot).map_err(|e| format!("{src}: {e}"))?;
             std::fs::write(&dest, serde_json::to_string(&clip).unwrap())
                 .map_err(|e| format!("{}: {e}", dest.display()))?;

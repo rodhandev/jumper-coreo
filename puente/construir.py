@@ -4,7 +4,7 @@
                                                                        --ver_clip--> clip.mp4
 
     python construir.py <jumper checkout> <guion> [--dest <dir>] [--sin-equilibrio]
-                        [--modelo <xml>] [--caras <dir>] [--sin-video]
+                        [--modelo <xml>] [--caras <dir>] [--musica <pista>] [--sin-video]
 
 Run from the jumper checkout's venv. Every step is the script of the same name in this
 directory, run as is; a step that refuses (a posture that does not exist, a joint too
@@ -61,7 +61,9 @@ def main() -> None:
     if "--sin-video" not in sys.argv:
         print("[4] ver_clip")
         model = arg("--modelo", repo / "assets" / "jumper" / "jumper.xml")
-        extra = ["--caras", arg("--caras"), "--guion", clip] if arg("--caras") else []
+        extra = ["--guion", clip]
+        extra += ["--caras", arg("--caras")] if arg("--caras") else []
+        extra += ["--musica", arg("--musica")] if arg("--musica") else []
         run(py, HERE / "ver_clip.py", repo, dest / f"{name}.npz", model, dest / f"{name}.mp4", *extra)
     print(f"listo: {dest / (name + '.npz')}")
 

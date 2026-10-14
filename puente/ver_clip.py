@@ -4,11 +4,12 @@ What the guion asks for, before any training: the base pose from the resting-flo
 solver and the 22 joints, drawn with any MJCF (the Zymbot colours, for example).
 
     python ver_clip.py <jumper checkout> <clip.npz> <model.xml> <out.mp4> [--fps 30]
-                       [--caras <dir de PNG> --guion <clip.json>]
+                       [--caras <dir de PNG> --guion <clip.json>] [--musica <pista>]
 
 With `--caras` and a model that has a `cara` geom (recolorear.py --cara), the face
 screen follows the guion's `cara` orders: each PNG in the directory is one
-expression, named as the guion names it.
+expression, named as the guion names it. With `--musica` (and `--guion`, for the
+clip's `musica_desfase`) the track is laid under the video from the clip's first beat.
 """
 
 import json
@@ -26,7 +27,10 @@ def arg(name):
 
 fps = int(arg("--fps") or 30)
 caras = Path(arg("--caras")) if arg("--caras") else None
-ordenes = json.loads(Path(arg("--guion")).read_text())["cara"] if arg("--guion") else []
+guion = json.loads(Path(arg("--guion")).read_text()) if arg("--guion") else {}
+ordenes = guion.get("cara", []) if caras is not None else []
+musica = arg("--musica")
+desfase = guion.get("musica_desfase") or 0.0
 sys.path[:0] = [str(repo.resolve() / "tools"), str(repo.resolve())]
 import import_wbc_dances as dances  # noqa: E402
 from tasks.jumper.common.dance.motion import LEG_JOINTS  # noqa: E402
@@ -57,8 +61,9 @@ model.vis.global_.offwidth, model.vis.global_.offheight = W, H
 r = mujoco.Renderer(model, H, W)
 cam = mujoco.MjvCamera()
 cam.distance, cam.azimuth, cam.elevation = 0.75, 135, -18
+audio = ["-ss", f"{desfase:.3f}", "-i", musica, "-shortest", "-c:a", "aac"] if musica else []
 ff = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
-                       "-s", f"{W}x{H}", "-r", str(fps), "-i", "-", "-pix_fmt", "yuv420p", str(dest)],
+                       "-s", f"{W}x{H}", "-r", str(fps), "-i", "-", *audio, "-pix_fmt", "yuv420p", str(dest)],
                       stdin=subprocess.PIPE)
 cara_geom = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "cara")
 for _, e in ordenes:

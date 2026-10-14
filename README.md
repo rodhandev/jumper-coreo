@@ -24,6 +24,12 @@ What it does for you:
 - **Mirrors the right claw** from the left as an offset from `HOME` (the robot is not exactly
   symmetric, so mirroring angles would be wrong).
 - **Minimum-jerk interpolation**; overlapping orders chain instead of jumping.
+- **Automatic balance**: the claws are the front legs, so lifting both tips the robot over
+  (at HOME the centre of mass is 17 mm ahead of the middle feet). Wherever a claw is up,
+  the body is shifted over the four legs by IK, ahead of time and smoothly — the script
+  does not have to know. Two claws up from standing: 50° of tilt without it, 0.1° with it.
+- **On the real beat of a track**: `musica pulsos.json` (from `zym-compas pulsos`) instead of
+  `pulso`, and `@8` is the track's 8th beat even if the tempo drifts.
 - **Refuses what the robot cannot do**, with the line: unknown postures, joints past their
   range, joint speed over 12 rad/s, base tilt over 17° (both measured on Jumper's trained
   dances).
@@ -31,16 +37,18 @@ What it does for you:
 ## Pipeline
 
 ```bash
-cargo run --release -- compilar guiones/saludo.guion -o salidas/saludo.json   # Rust: script -> joint table
-cd ../jumper && . .venv/bin/activate                                           # Jumper's environment
-python ../coreo/puente/clip_a_npz.py . ../coreo/salidas/saludo.json tasks/jumper/coreo/media/saludo.npz
-python ../coreo/puente/ver_clip.py . tasks/jumper/coreo/media/saludo.npz <model.xml> preview.mp4
-python scripts/train.py --task jumper.coreo                                    # learn it
+cd ../jumper && . .venv/bin/activate                     # Jumper's environment (MuJoCo, its tools)
+python ../coreo/puente/construir.py . ../coreo/guiones/saludo.guion [--musica track.wav]
+#   [1] compile (Rust)  [2] balance  [3] .npz  [4] preview video -> ../coreo/salidas/
+cp ../coreo/salidas/saludo.npz tasks/jumper/coreo/media/   # one clip in media/ at a time
+python scripts/train.py --task jumper.coreo               # learn it
 ```
 
 | Piece | Role |
 |---|---|
 | `src/` | script parser, postures, mirroring, interpolation, checks (Rust, no runtime deps beyond serde/toml) |
+| `puente/construir.py` | the whole pipeline in one command |
+| `puente/equilibrar.py` | automatic balance (IK of the four legs while a claw is up) |
 | `puente/clip_a_npz.py` | base pose from Jumper's resting-floor solver (`tools/import_wbc_gestures.py`), writes the training `.npz` |
 | `puente/ver_clip.py` | kinematic preview video, face screen following the script |
 | `puente/compatibilidad.py` | which claw posture goes with which leg stance without tipping over |

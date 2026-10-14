@@ -1,0 +1,12 @@
+[package]
+name = "coreo"
+version = "0.1.0"
+edition = "2021"
+description = "Guiones de comportamiento -> clips de movimiento para Jumper (robot cangrejo)"
+license = "Apache-2.0"
+
+# Versiones fijadas a las que ya usa jumper/deploy/fsm (Cargo.lock), con más de 7 días (DEC-671).
+[dependencies]
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+toml = "=0.8.23"

@@ -1,0 +1,181 @@
+{
+ "joints": [
+  "LF_J0_joint",
+  "LF_J1_joint",
+  "LF_J2_joint",
+  "LF_J3_joint",
+  "LF_J4_joint",
+  "RF_J0_joint",
+  "RF_J1_joint",
+  "RF_J2_joint",
+  "RF_J3_joint",
+  "RF_J4_joint",
+  "LM_J0_joint",
+  "LM_J1_joint",
+  "LM_J2_joint",
+  "RM_J0_joint",
+  "RM_J1_joint",
+  "RM_J2_joint",
+  "LR_J0_joint",
+  "LR_J1_joint",
+  "LR_J2_joint",
+  "RR_J0_joint",
+  "RR_J1_joint",
+  "RR_J2_joint"
+ ],
+ "home": {
+  "LF_J0_joint": -0.5507,
+  "LF_J1_joint": -1.0658,
+  "LF_J2_joint": -0.4408,
+  "LF_J3_joint": -1.374,
+  "LF_J4_joint": 0.0,
+  "RF_J0_joint": 0.5524,
+  "RF_J1_joint": -1.066,
+  "RF_J2_joint": 0.4414,
+  "RF_J3_joint": 1.4173,
+  "RF_J4_joint": 0.0,
+  "LM_J0_joint": 0.0012,
+  "LM_J1_joint": 0.5356,
+  "LM_J2_joint": -1.8271,
+  "RM_J0_joint": -0.0012,
+  "RM_J1_joint": -0.5376,
+  "RM_J2_joint": 1.8313,
+  "LR_J0_joint": 0.6313,
+  "LR_J1_joint": 0.5534,
+  "LR_J2_joint": -1.8648,
+  "RR_J0_joint": -0.6326,
+  "RR_J1_joint": -0.5548,
+  "RR_J2_joint": 1.8678
+ },
+ "range": {
+  "LF_J0_joint": [
+   -2.75,
+   0.7
+  ],
+  "LF_J1_joint": [
+   -4.75,
+   1.4
+  ],
+  "LF_J2_joint": [
+   -2.2,
+   1.65
+  ],
+  "LF_J3_joint": [
+   -2.1,
+   1.65
+  ],
+  "LF_J4_joint": [
+   -1.6,
+   0.1
+  ],
+  "RF_J0_joint": [
+   -0.7,
+   2.75
+  ],
+  "RF_J1_joint": [
+   -4.75,
+   1.4
+  ],
+  "RF_J2_joint": [
+   -1.65,
+   2.2
+  ],
+  "RF_J3_joint": [
+   -1.65,
+   2.1
+  ],
+  "RF_J4_joint": [
+   -0.1,
+   1.6
+  ],
+  "LM_J0_joint": [
+   -0.75,
+   1.0
+  ],
+  "LM_J1_joint": [
+   -2.4,
+   1.5
+  ],
+  "LM_J2_joint": [
+   -2.4,
+   1.8
+  ],
+  "RM_J0_joint": [
+   -1.0,
+   0.75
+  ],
+  "RM_J1_joint": [
+   -1.5,
+   2.4
+  ],
+  "RM_J2_joint": [
+   -1.8,
+   2.4
+  ],
+  "LR_J0_joint": [
+   -0.6,
+   2.75
+  ],
+  "LR_J1_joint": [
+   -2.4,
+   1.6
+  ],
+  "LR_J2_joint": [
+   -2.4,
+   1.8
+  ],
+  "RR_J0_joint": [
+   -2.75,
+   0.6
+  ],
+  "RR_J1_joint": [
+   -1.6,
+   2.4
+  ],
+  "RR_J2_joint": [
+   -1.8,
+   2.4
+  ]
+ },
+ "groups": {
+  "tenaza_izq": [
+   "LF_J0_joint",
+   "LF_J1_joint",
+   "LF_J2_joint",
+   "LF_J3_joint",
+   "LF_J4_joint"
+  ],
+  "tenaza_der": [
+   "RF_J0_joint",
+   "RF_J1_joint",
+   "RF_J2_joint",
+   "RF_J3_joint",
+   "RF_J4_joint"
+  ],
+  "pata_media_izq": [
+   "LM_J0_joint",
+   "LM_J1_joint",
+   "LM_J2_joint"
+  ],
+  "pata_media_der": [
+   "RM_J0_joint",
+   "RM_J1_joint",
+   "RM_J2_joint"
+  ],
+  "pata_trasera_izq": [
+   "LR_J0_joint",
+   "LR_J1_joint",
+   "LR_J2_joint"
+  ],
+  "pata_trasera_der": [
+   "RR_J0_joint",
+   "RR_J1_joint",
+   "RR_J2_joint"
+  ]
+ },
+ "mirror_keep_sign": [
+  "LF_J1_joint",
+  "RF_J1_joint"
+ ],
+ "mujoco": "3.11.0"
+}

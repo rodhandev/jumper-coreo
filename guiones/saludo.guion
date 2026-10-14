@@ -1,0 +1,26 @@
+# saludo.guion — Jumper (Zymbot) se presenta: se inclina atrás, saluda con la
+# tenaza izquierda, celebra con las dos y hace una reverencia. ~10 s a 100 bpm.
+pulso 100
+
+@0    cara sonrisa
+@0    sonido encendido
+@1    patas apoyo_atras en 2
+@1    tenaza_izq arriba en 2
+@3    alternar tenaza_izq arriba_b arriba veces 6 cada 0.5
+@6    cara maravilla
+@6    tenaza_izq reposo en 1.5
+@6    patas de_pie en 1.5
+@8    tenaza_izq ofrecer en 1.5
+@8    patas sentado en 1.5
+# Entre dos gestos se pasa por de pie: ir de «sentado» a «reverencia» sin parar vuelca
+# el robot de morro sobre las tenazas (las traseras quedan 106 mm en el aire, 51°).
+@10   cara jugueton
+@10   tenaza_izq reposo en 1
+@10   patas de_pie en 1
+@11   sonido celebracion
+@11   patas reverencia en 1
+@12   tenazas reverencia en 1
+@13.5 cara sonrisa
+@13.5 tenazas reposo en 2
+@13.5 patas de_pie en 2
+@16   fin

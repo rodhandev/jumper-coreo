@@ -1,0 +1,7 @@
+# prueba-dos-tenazas.guion — el caso que volcaba el robot (51°): las dos tenazas arriba
+# desde de pie, sin preparar el cuerpo. Con `equilibrar.py` debe pasar; sin él, no.
+pulso 100
+@1   tenazas arriba en 2
+@3   alternar tenazas arriba_b arriba veces 4 cada 0.5
+@6   tenazas reposo en 2
+@9   fin

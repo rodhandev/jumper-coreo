@@ -116,7 +116,10 @@ fn render(ev: &[Ev], semilla: u64) -> Vec<f32> {
     }
     // pico a -3 dBFS: todas las categorías al mismo nivel, como los de Zymbot
     let pico = out.iter().fold(0.0f32, |m, x| m.max(x.abs())).max(1e-6);
-    out.iter().map(|x| x * 0.708 / pico).collect()
+    let mut out: Vec<f32> = out.iter().map(|x| x * 0.708 / pico).collect();
+    // 150 ms de silencio al final: algunos reproductores (VLC, 15-oct) cortaban el último gorjeo de los ficheros cortos.
+    out.extend(std::iter::repeat(0.0).take((0.15 * SR as f32) as usize));
+    out
 }
 
 fn wav(path: &Path, x: &[f32]) -> std::io::Result<()> {

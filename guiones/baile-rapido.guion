@@ -1,0 +1,32 @@
+# Generado por `coreo bailar` (estilo rapido, semilla 0). Se puede editar a mano.
+musica /media/rodri/Rodri4sci/jumper-workspace/salidas/musica/jumper-alegre-1.pulsos.json
+@0 cara jugueton
+@0 sonido encendido_de_robot
+@1 paso golpes
+@5 paso agacharse
+@9 paso giro
+@13 paso golpes
+@17 paso mecerse
+@21 paso golpes
+@25 paso agacharse
+@29 paso giro
+@33 paso golpes
+@37 paso mecerse
+@41 paso golpes
+@45 paso agacharse
+@49 paso giro
+@53 paso golpes
+@57 paso mecerse
+@61 paso golpes
+@65 paso agacharse
+@69 paso giro
+@73 paso golpes
+@77 paso mecerse
+@81 paso golpes
+@85 paso agacharse
+@89 paso giro
+@93 paso golpes
+@97 paso mecerse
+@101 cara sonrisa
+@101 sonido celebracion
+@103 fin

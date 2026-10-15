@@ -42,15 +42,19 @@ fn opt(args: &[String], name: &str, default: &str) -> PathBuf {
 fn run(args: &[String]) -> Result<(), String> {
     let base = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let robot_path = opt(args, "--robot", &base.join("robot.json").to_string_lossy());
-    let posturas_path = opt(args, "--posturas", &base.join("posturas/base.toml").to_string_lossy());
+    let posturas_path = opt(args, "--posturas", &base.join("posturas").to_string_lossy());
     let robot = robot::Robot::cargar(&robot_path, &posturas_path)?;
 
     match args.first().map(String::as_str) {
         Some("compilar") => {
-            let src = args.get(1).ok_or("falta el guion: coreo compilar <guion> -o <clip.json>")?;
+            let src = args
+                .get(1)
+                .ok_or("falta el guion: coreo compilar <guion> -o <clip.json>")?;
             let dest = opt(args, "-o", "clip.json");
             let texto = std::fs::read_to_string(src).map_err(|e| format!("{src}: {e}"))?;
-            let dir = std::path::Path::new(src).parent().unwrap_or(std::path::Path::new("."));
+            let dir = std::path::Path::new(src)
+                .parent()
+                .unwrap_or(std::path::Path::new("."));
             let g = guion::leer(&texto, dir).map_err(|e| format!("{src}:{e}"))?;
             let clip = guion::compilar(&g, &robot).map_err(|e| format!("{src}: {e}"))?;
             std::fs::write(&dest, serde_json::to_string(&clip).unwrap())
@@ -67,7 +71,9 @@ fn run(args: &[String]) -> Result<(), String> {
             );
             println!(
                 "  velocidad máxima {:.2} rad/s en {} (límite {:.1})",
-                clip.informe.vel_max, clip.informe.vel_max_en, robot::VEL_MAX
+                clip.informe.vel_max,
+                clip.informe.vel_max_en,
+                robot::VEL_MAX
             );
             Ok(())
         }
@@ -85,8 +91,10 @@ fn run(args: &[String]) -> Result<(), String> {
             }
             Ok(())
         }
-        _ => Err("uso: coreo compilar <guion> -o <clip.json> | coreo posturas | coreo sonidos <dir>  \
-                  [--robot robot.json] [--posturas posturas/base.toml]"
-            .into()),
+        _ => Err(
+            "uso: coreo compilar <guion> -o <clip.json> | coreo posturas | coreo sonidos <dir>  \
+                  [--robot robot.json] [--posturas posturas/]"
+                .into(),
+        ),
     }
 }

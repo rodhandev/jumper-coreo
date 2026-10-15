@@ -25,37 +25,238 @@ use Ev::*;
 
 /// La tabla: categoría -> frase. Contornos: subir = positivo/pregunta, bajar = negativo/cierre.
 const TABLA: &[(&str, &[Ev])] = &[
-    ("hablar", &[Gorjeo(900., 1100., 0.07), Silencio(0.03), Gorjeo(1000., 850., 0.06), Silencio(0.03), Gorjeo(950., 1200., 0.08)]),
-    ("afirmacion corta", &[Tenaza(0.6), Silencio(0.04), Gorjeo(800., 1300., 0.09)]),
-    ("afirmacion larga", &[Tenaza(0.6), Silencio(0.05), Gorjeo(700., 1000., 0.1), Silencio(0.03), Gorjeo(1000., 1500., 0.14)]),
-    ("negacion", &[Gorjeo(1100., 700., 0.1), Silencio(0.05), Gorjeo(1100., 600., 0.12)]),
-    ("duda corta", &[Gorjeo(800., 950., 0.08), Silencio(0.06), Gorjeo(850., 1250., 0.12)]),
-    ("desconcierto corto", &[Gorjeo(1200., 700., 0.07), Gorjeo(700., 1150., 0.09)]),
-    ("matatiempo corto", &[Tenaza(0.3), Silencio(0.12), Tenaza(0.3)]),
-    ("excusa", &[Gorjeo(900., 750., 0.09), Silencio(0.04), Gorjeo(800., 900., 0.08), Gorjeo(900., 700., 0.12)]),
+    (
+        "hablar",
+        &[
+            Gorjeo(900., 1100., 0.07),
+            Silencio(0.03),
+            Gorjeo(1000., 850., 0.06),
+            Silencio(0.03),
+            Gorjeo(950., 1200., 0.08),
+        ],
+    ),
+    (
+        "afirmacion corta",
+        &[Tenaza(0.6), Silencio(0.04), Gorjeo(800., 1300., 0.09)],
+    ),
+    (
+        "afirmacion larga",
+        &[
+            Tenaza(0.6),
+            Silencio(0.05),
+            Gorjeo(700., 1000., 0.1),
+            Silencio(0.03),
+            Gorjeo(1000., 1500., 0.14),
+        ],
+    ),
+    (
+        "negacion",
+        &[
+            Gorjeo(1100., 700., 0.1),
+            Silencio(0.05),
+            Gorjeo(1100., 600., 0.12),
+        ],
+    ),
+    (
+        "duda corta",
+        &[
+            Gorjeo(800., 950., 0.08),
+            Silencio(0.06),
+            Gorjeo(850., 1250., 0.12),
+        ],
+    ),
+    (
+        "desconcierto corto",
+        &[Gorjeo(1200., 700., 0.07), Gorjeo(700., 1150., 0.09)],
+    ),
+    (
+        "matatiempo corto",
+        &[Tenaza(0.3), Silencio(0.12), Tenaza(0.3)],
+    ),
+    (
+        "excusa",
+        &[
+            Gorjeo(900., 750., 0.09),
+            Silencio(0.04),
+            Gorjeo(800., 900., 0.08),
+            Gorjeo(900., 700., 0.12),
+        ],
+    ),
     ("censura", &[Trino(1600., 0.35)]),
-    ("atencion", &[Tenaza(0.9), Silencio(0.06), Tenaza(0.9), Silencio(0.05), Gorjeo(1300., 1700., 0.08)]),
-    ("alerta", &[Gorjeo(1500., 1900., 0.1), Silencio(0.05), Gorjeo(1500., 1900., 0.1), Silencio(0.05), Gorjeo(1500., 1900., 0.1)]),
-    ("encendido de robot", &[Gorjeo(250., 900., 0.35), Tenaza(0.7), Silencio(0.05), Tenaza(0.7), Gorjeo(900., 1500., 0.15)]),
-    ("apagado", &[Gorjeo(1200., 250., 0.45), Silencio(0.05), Tenaza(0.3)]),
-    ("acomodarse", &[Tenaza(0.4), Silencio(0.07), Tenaza(0.5), Silencio(0.05), Gorjeo(600., 750., 0.1)]),
+    (
+        "atencion",
+        &[
+            Tenaza(0.9),
+            Silencio(0.06),
+            Tenaza(0.9),
+            Silencio(0.05),
+            Gorjeo(1300., 1700., 0.08),
+        ],
+    ),
+    (
+        "alerta",
+        &[
+            Gorjeo(1500., 1900., 0.1),
+            Silencio(0.05),
+            Gorjeo(1500., 1900., 0.1),
+            Silencio(0.05),
+            Gorjeo(1500., 1900., 0.1),
+        ],
+    ),
+    (
+        "encendido de robot",
+        &[
+            Gorjeo(250., 900., 0.35),
+            Tenaza(0.7),
+            Silencio(0.05),
+            Tenaza(0.7),
+            Gorjeo(900., 1500., 0.15),
+        ],
+    ),
+    (
+        "apagado",
+        &[Gorjeo(1200., 250., 0.45), Silencio(0.05), Tenaza(0.3)],
+    ),
+    (
+        "acomodarse",
+        &[
+            Tenaza(0.4),
+            Silencio(0.07),
+            Tenaza(0.5),
+            Silencio(0.05),
+            Gorjeo(600., 750., 0.1),
+        ],
+    ),
     ("movimiento", &[Tenaza(0.5), Silencio(0.06), Tenaza(0.45)]),
-    ("sorpresa", &[Gorjeo(700., 1800., 0.12), Silencio(0.03), Trino(1800., 0.15)]),
-    ("celebracion", &[Tenaza(0.8), Tenaza(0.8), Gorjeo(900., 1350., 0.07), Gorjeo(1350., 1800., 0.07), Trino(1800., 0.25)]),
-    ("exito", &[Gorjeo(800., 1000., 0.07), Gorjeo(1000., 1350., 0.07), Gorjeo(1350., 1800., 0.14)]),
-    ("error", &[Gorjeo(500., 420., 0.12), Silencio(0.05), Gorjeo(420., 300., 0.2)]),
+    (
+        "sorpresa",
+        &[
+            Gorjeo(700., 1800., 0.12),
+            Silencio(0.03),
+            Trino(1800., 0.15),
+        ],
+    ),
+    (
+        "celebracion",
+        &[
+            Tenaza(0.8),
+            Tenaza(0.8),
+            Gorjeo(900., 1350., 0.07),
+            Gorjeo(1350., 1800., 0.07),
+            Trino(1800., 0.25),
+        ],
+    ),
+    (
+        "exito",
+        &[
+            Gorjeo(800., 1000., 0.07),
+            Gorjeo(1000., 1350., 0.07),
+            Gorjeo(1350., 1800., 0.14),
+        ],
+    ),
+    (
+        "error",
+        &[
+            Gorjeo(500., 420., 0.12),
+            Silencio(0.05),
+            Gorjeo(420., 300., 0.2),
+        ],
+    ),
     ("descontento", &[Gorjeo(700., 520., 0.18), Tenaza(0.3)]),
-    ("enojo", &[Tenaza(1.0), Tenaza(1.0), Tenaza(1.0), Gorjeo(600., 450., 0.15)]),
-    ("tristeza", &[Gorjeo(700., 420., 0.3), Silencio(0.08), Gorjeo(520., 350., 0.35)]),
-    ("alegria", &[Gorjeo(1100., 1500., 0.08), Silencio(0.03), Gorjeo(1200., 1700., 0.1), Tenaza(0.6)]),
-    ("risa", &[Gorjeo(1300., 1100., 0.05), Silencio(0.03), Gorjeo(1350., 1100., 0.05), Silencio(0.03), Gorjeo(1400., 1100., 0.05), Silencio(0.03), Gorjeo(1450., 1000., 0.07)]),
-    ("miedo", &[Trino(1500., 0.2), Silencio(0.04), Trino(1650., 0.15)]),
-    ("pensando", &[Tenaza(0.25), Silencio(0.18), Tenaza(0.25), Silencio(0.18), Gorjeo(700., 820., 0.12)]),
-    ("saludo", &[Tenaza(0.6), Gorjeo(800., 1400., 0.1), Silencio(0.04), Gorjeo(1200., 1000., 0.12)]),
-    ("despedida", &[Gorjeo(1200., 1000., 0.1), Silencio(0.04), Gorjeo(1000., 700., 0.16), Tenaza(0.4)]),
-    ("curiosidad", &[Gorjeo(700., 900., 0.07), Silencio(0.05), Gorjeo(800., 1450., 0.14)]),
-    ("sueno", &[Gorjeo(500., 380., 0.4), Silencio(0.2), Gorjeo(450., 360., 0.45)]),
-    ("carino", &[Gorjeo(900., 1150., 0.12), Silencio(0.04), Gorjeo(1150., 950., 0.16)]),
+    (
+        "enojo",
+        &[
+            Tenaza(1.0),
+            Tenaza(1.0),
+            Tenaza(1.0),
+            Gorjeo(600., 450., 0.15),
+        ],
+    ),
+    (
+        "tristeza",
+        &[
+            Gorjeo(700., 420., 0.3),
+            Silencio(0.08),
+            Gorjeo(520., 350., 0.35),
+        ],
+    ),
+    (
+        "alegria",
+        &[
+            Gorjeo(1100., 1500., 0.08),
+            Silencio(0.03),
+            Gorjeo(1200., 1700., 0.1),
+            Tenaza(0.6),
+        ],
+    ),
+    (
+        "risa",
+        &[
+            Gorjeo(1300., 1100., 0.05),
+            Silencio(0.03),
+            Gorjeo(1350., 1100., 0.05),
+            Silencio(0.03),
+            Gorjeo(1400., 1100., 0.05),
+            Silencio(0.03),
+            Gorjeo(1450., 1000., 0.07),
+        ],
+    ),
+    (
+        "miedo",
+        &[Trino(1500., 0.2), Silencio(0.04), Trino(1650., 0.15)],
+    ),
+    (
+        "pensando",
+        &[
+            Tenaza(0.25),
+            Silencio(0.18),
+            Tenaza(0.25),
+            Silencio(0.18),
+            Gorjeo(700., 820., 0.12),
+        ],
+    ),
+    (
+        "saludo",
+        &[
+            Tenaza(0.6),
+            Gorjeo(800., 1400., 0.1),
+            Silencio(0.04),
+            Gorjeo(1200., 1000., 0.12),
+        ],
+    ),
+    (
+        "despedida",
+        &[
+            Gorjeo(1200., 1000., 0.1),
+            Silencio(0.04),
+            Gorjeo(1000., 700., 0.16),
+            Tenaza(0.4),
+        ],
+    ),
+    (
+        "curiosidad",
+        &[
+            Gorjeo(700., 900., 0.07),
+            Silencio(0.05),
+            Gorjeo(800., 1450., 0.14),
+        ],
+    ),
+    (
+        "sueno",
+        &[
+            Gorjeo(500., 380., 0.4),
+            Silencio(0.2),
+            Gorjeo(450., 360., 0.45),
+        ],
+    ),
+    (
+        "carino",
+        &[
+            Gorjeo(900., 1150., 0.12),
+            Silencio(0.04),
+            Gorjeo(1150., 950., 0.16),
+        ],
+    ),
 ];
 
 struct Azar(u64);
@@ -72,7 +273,13 @@ impl Azar {
 fn env(i: usize, n: usize, a: f32) -> f32 {
     let k = (a * SR as f32) as usize;
     let k = k.max(1).min(n / 2).max(1);
-    if i < k { i as f32 / k as f32 } else if i + k > n { (n - i) as f32 / k as f32 } else { 1.0 }
+    if i < k {
+        i as f32 / k as f32
+    } else if i + k > n {
+        (n - i) as f32 / k as f32
+    } else {
+        1.0
+    }
 }
 
 /// Un tono de f0 a f1 Hz (contorno exponencial, suena natural) con vibrato `vib` a 28 Hz:
@@ -107,7 +314,8 @@ fn render(ev: &[Ev], semilla: u64) -> Vec<f32> {
                     let r = az.ruido();
                     let hp = r - prev; // paso alto de primer orden: quita el «soplido» grave
                     prev = r;
-                    let s = 0.55 * hp * (-t / 0.006).exp() + 0.35 * (tau * fp * t).sin() * (-t / 0.018).exp();
+                    let s = 0.55 * hp * (-t / 0.006).exp()
+                        + 0.35 * (tau * fp * t).sin() * (-t / 0.018).exp();
                     out.push((0.5 + 0.5 * brillo) * s);
                 }
             }
@@ -123,7 +331,10 @@ fn render(ev: &[Ev], semilla: u64) -> Vec<f32> {
 }
 
 fn wav(path: &Path, x: &[f32]) -> std::io::Result<()> {
-    let datos: Vec<u8> = x.iter().flat_map(|v| ((v.clamp(-1.0, 1.0) * 32767.0) as i16).to_le_bytes()).collect();
+    let datos: Vec<u8> = x
+        .iter()
+        .flat_map(|v| ((v.clamp(-1.0, 1.0) * 32767.0) as i16).to_le_bytes())
+        .collect();
     let mut h = Vec::with_capacity(44 + datos.len());
     h.extend(b"RIFF");
     h.extend((36 + datos.len() as u32).to_le_bytes());
@@ -164,7 +375,11 @@ pub fn generar(dir: &Path) -> Result<Vec<(String, f64)>, String> {
         "volumen_sugerido": 0.51,
         "emociones": dic,
     });
-    std::fs::write(dir.join("diccionario.json"), serde_json::to_string_pretty(&doc).unwrap()).map_err(|e| e.to_string())?;
+    std::fs::write(
+        dir.join("diccionario.json"),
+        serde_json::to_string_pretty(&doc).unwrap(),
+    )
+    .map_err(|e| e.to_string())?;
     Ok(hechos)
 }
 

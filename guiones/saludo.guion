@@ -19,8 +19,10 @@ pulso 100
 @10   patas de_pie en 1
 @11   sonido celebracion
 @11   patas reverencia en 1
-@12   tenazas reverencia en 1
+@11.5 tenazas arriba en 0.7                 # por arriba: de reposo a la reverencia directo, las tenazas se cruzan
+@12.2 tenazas reverencia_abierta en 0.8    # la reverencia de upstream mete una palma en la otra
 @13.5 cara sonrisa
-@13.5 tenazas reposo en 2
+@13.5 tenazas arriba en 0.8                 # y de vuelta también por arriba
+@14.3 tenazas reposo en 1.2
 @13.5 patas de_pie en 2
 @16   fin

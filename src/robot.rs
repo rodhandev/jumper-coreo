@@ -36,20 +36,47 @@ impl Robot {
             &std::fs::read_to_string(robot).map_err(|e| format!("{}: {e}", robot.display()))?,
         )
         .map_err(|e| format!("{}: {e}", robot.display()))?;
-        let tabla: toml::Table = std::fs::read_to_string(posturas)
-            .map_err(|e| format!("{}: {e}", posturas.display()))?
-            .parse()
-            .map_err(|e| format!("{}: {e}", posturas.display()))?;
+        // `posturas` es un fichero o una carpeta: de una carpeta se leen todos los .toml (base.toml, generado de los
+        // gestos, y propias.toml, de crear_postura.py). Un mismo nombre en dos ficheros es un error, no una elección.
+        let ficheros: Vec<std::path::PathBuf> = if posturas.is_dir() {
+            let mut v: Vec<_> = std::fs::read_dir(posturas)
+                .map_err(|e| format!("{}: {e}", posturas.display()))?
+                .filter_map(|e| e.ok().map(|e| e.path()))
+                .filter(|p| p.extension().is_some_and(|x| x == "toml"))
+                .collect();
+            v.sort();
+            v
+        } else {
+            vec![posturas.to_path_buf()]
+        };
         let mut p = BTreeMap::new();
-        for (grupo, v) in &tabla {
-            let Some(sub) = v.as_table() else { continue };
-            for (nombre, valores) in sub {
-                let mut m = BTreeMap::new();
-                for (k, x) in valores.as_table().ok_or(format!("[{grupo}.{nombre}] no es una tabla"))? {
-                    let x = x.as_float().or(x.as_integer().map(|i| i as f64));
-                    m.insert(k.clone(), x.ok_or(format!("[{grupo}.{nombre}] {k} no es un número"))?);
+        let mut origen: BTreeMap<String, String> = BTreeMap::new();
+        for f in &ficheros {
+            let tabla: toml::Table = std::fs::read_to_string(f)
+                .map_err(|e| format!("{}: {e}", f.display()))?
+                .parse()
+                .map_err(|e| format!("{}: {e}", f.display()))?;
+            for (grupo, v) in &tabla {
+                let Some(sub) = v.as_table() else { continue };
+                for (nombre, valores) in sub {
+                    let mut m = BTreeMap::new();
+                    for (k, x) in valores
+                        .as_table()
+                        .ok_or(format!("[{grupo}.{nombre}] no es una tabla"))?
+                    {
+                        let x = x.as_float().or(x.as_integer().map(|i| i as f64));
+                        m.insert(
+                            k.clone(),
+                            x.ok_or(format!("[{grupo}.{nombre}] {k} no es un número"))?,
+                        );
+                    }
+                    let clave = format!("{grupo}.{nombre}");
+                    let aqui = f.file_name().unwrap().to_string_lossy().to_string();
+                    if let Some(otro) = origen.insert(clave.clone(), aqui.clone()) {
+                        return Err(format!("[{clave}] está en {otro} y en {aqui}"));
+                    }
+                    p.insert(clave, m);
                 }
-                p.insert(format!("{grupo}.{nombre}"), m);
             }
         }
         Ok(Robot {
@@ -72,7 +99,11 @@ impl Robot {
             if let Some(valores) = self.posturas.get(&format!("tenazas.{postura}")) {
                 return valores
                     .iter()
-                    .map(|(j, &x)| self.indice(j).map(|i| (i, x)).ok_or(format!("[tenazas.{postura}]: {j} desconocida")))
+                    .map(|(j, &x)| {
+                        self.indice(j)
+                            .map(|i| (i, x))
+                            .ok_or(format!("[tenazas.{postura}]: {j} desconocida"))
+                    })
                     .collect();
             }
         }
@@ -81,16 +112,28 @@ impl Robot {
             "tenaza_der" => ("tenaza", &["RF"]),
             "tenazas" => ("tenaza", &["LF", "RF"]),
             "patas" => ("patas", &[]),
-            _ => return Err(format!("grupo «{grupo}» no existe; hay: {}", GRUPOS.join(", "))),
+            _ => {
+                return Err(format!(
+                    "grupo «{grupo}» no existe; hay: {}",
+                    GRUPOS.join(", ")
+                ))
+            }
         };
         let clave = format!("{familia}.{postura}");
         let valores = self.posturas.get(&clave).ok_or_else(|| {
-            format!("postura «{postura}» no existe para {familia}; hay: {}", self.nombres(familia).join(", "))
+            format!(
+                "postura «{postura}» no existe para {familia}; hay: {}",
+                self.nombres(familia).join(", ")
+            )
         })?;
         let mut out = Vec::new();
         if familia == "patas" {
             for (j, &x) in valores {
-                out.push((self.indice(j).ok_or(format!("[{clave}]: articulación {j} desconocida"))?, x));
+                out.push((
+                    self.indice(j)
+                        .ok_or(format!("[{clave}]: articulación {j} desconocida"))?,
+                    x,
+                ));
             }
         } else {
             // Las tenazas se escriben para la izquierda; la derecha es su espejo. Se espeja
@@ -100,9 +143,15 @@ impl Robot {
             for lado in lados {
                 for (j, &x) in valores {
                     let nombre = format!("{lado}_{j}_joint");
-                    let i = self.indice(&nombre).ok_or(format!("[{clave}]: {j} no es J0..J4"))?;
+                    let i = self
+                        .indice(&nombre)
+                        .ok_or(format!("[{clave}]: {j} no es J0..J4"))?;
                     let izq = self.indice(&format!("LF_{j}_joint")).unwrap();
-                    let signo = if *lado == "LF" || self.keep_sign.iter().any(|k| k == &nombre) { 1.0 } else { -1.0 };
+                    let signo = if *lado == "LF" || self.keep_sign.iter().any(|k| k == &nombre) {
+                        1.0
+                    } else {
+                        -1.0
+                    };
                     out.push((i, self.home[i] + signo * (x - self.home[izq])));
                 }
             }
@@ -119,7 +168,10 @@ impl Robot {
 
     pub fn catalogo(&self) -> Vec<(&'static str, Vec<String>)> {
         vec![
-            ("tenaza (tenaza_izq, tenaza_der, tenazas)", self.nombres("tenaza")),
+            (
+                "tenaza (tenaza_izq, tenaza_der, tenazas)",
+                self.nombres("tenaza"),
+            ),
             ("tenazas, sólo las dos juntas", self.nombres("tenazas")),
             ("patas", self.nombres("patas")),
         ]

@@ -1,0 +1,167 @@
+# Posturas creadas con puente/crear_postura.py (por posición, no por ángulos).
+
+# crear_postura: punta de la tenaza izquierda en [62, 52, 116] mm
+[tenaza.rascar_a]
+J0 = -1.1704
+J1 = 0.1965
+J2 = 1.1335
+J3 = 0.9982
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [56, 62, 118] mm
+[tenaza.rascar_b]
+J0 = -1.1589
+J1 = 0.1114
+J2 = 1.1821
+J3 = 0.9430
+J4 = 0.0000
+
+# crear_postura: cuerpo +0 +15 +0 mm, roll +5 pitch +0 yaw +0 deg
+[patas.mecer_izq]
+LM_J0_joint = 0.0015
+LM_J1_joint = 0.2970
+LM_J2_joint = -1.8555
+RM_J0_joint = -0.0010
+RM_J1_joint = -0.6965
+RM_J2_joint = 1.7179
+LR_J0_joint = 0.7609
+LR_J1_joint = 0.3662
+LR_J2_joint = -1.8867
+RR_J0_joint = -0.5407
+RR_J1_joint = -0.7039
+RR_J2_joint = 1.7881
+
+# crear_postura: cuerpo +0 -15 +0 mm, roll -5 pitch +0 yaw +0 deg
+[patas.mecer_der]
+LM_J0_joint = 0.0010
+LM_J1_joint = 0.6935
+LM_J2_joint = -1.7129
+RM_J0_joint = -0.0015
+RM_J1_joint = -0.2980
+RM_J2_joint = 1.8589
+LR_J0_joint = 0.5397
+LR_J1_joint = 0.7020
+LR_J2_joint = -1.7833
+RR_J0_joint = -0.7625
+RR_J1_joint = -0.3684
+RR_J2_joint = 1.8886
+
+# crear_postura: cuerpo +0 +0 -22 mm, roll +0 pitch +0 yaw +0 deg
+[patas.agachado]
+LM_J0_joint = 0.0012
+LM_J1_joint = 0.9840
+LM_J2_joint = -2.1269
+RM_J0_joint = -0.0012
+RM_J1_joint = -0.9872
+RM_J2_joint = 2.1316
+LR_J0_joint = 0.6313
+LR_J1_joint = 1.0128
+LR_J2_joint = -2.1693
+RR_J0_joint = -0.6326
+RR_J1_joint = -1.0152
+RR_J2_joint = 2.1727
+
+# crear_postura: cuerpo +12 +0 +0 mm, roll +0 pitch +7 yaw +0 deg
+[patas.inclinar_adelante]
+LM_J0_joint = 0.0008
+LM_J1_joint = 0.5048
+LM_J2_joint = -1.8035
+RM_J0_joint = -0.0008
+RM_J1_joint = -0.5035
+RM_J2_joint = 1.8052
+LR_J0_joint = 0.6248
+LR_J1_joint = 0.2041
+LR_J2_joint = -1.5810
+RR_J0_joint = -0.6261
+RR_J1_joint = -0.2025
+RR_J2_joint = 1.5817
+
+# crear_postura: cuerpo -30 +0 +0 mm, roll +0 pitch -6 yaw +0 deg
+[patas.inclinar_atras]
+LM_J0_joint = -0.1478
+LM_J1_joint = 0.4894
+LM_J2_joint = -1.7770
+RM_J0_joint = 0.1483
+RM_J1_joint = -0.4953
+RM_J2_joint = 1.7862
+LR_J0_joint = 0.4907
+LR_J1_joint = 0.8767
+LR_J2_joint = -2.1903
+RR_J0_joint = -0.4917
+RR_J1_joint = -0.8824
+RR_J2_joint = 2.1980
+
+# crear_postura: cuerpo +0 +0 +0 mm, roll +0 pitch +0 yaw +10 deg
+[patas.girar_izq]
+LM_J0_joint = -0.2590
+LM_J1_joint = 0.5184
+LM_J2_joint = -1.7873
+RM_J0_joint = -0.2649
+RM_J1_joint = -0.5356
+RM_J2_joint = 1.8267
+LR_J0_joint = 0.3507
+LR_J1_joint = 0.5202
+LR_J2_joint = -1.7870
+RR_J0_joint = -0.9239
+RR_J1_joint = -0.5616
+RR_J2_joint = 1.8846
+
+# crear_postura: cuerpo +0 +0 +0 mm, roll +0 pitch +0 yaw -10 deg
+[patas.girar_der]
+LM_J0_joint = 0.2647
+LM_J1_joint = 0.5344
+LM_J2_joint = -1.8242
+RM_J0_joint = 0.2592
+RM_J1_joint = -0.5212
+RM_J2_joint = 1.7932
+LR_J0_joint = 0.9224
+LR_J1_joint = 0.5612
+LR_J2_joint = -1.8840
+RR_J0_joint = -0.3517
+RR_J1_joint = -0.5228
+RR_J2_joint = 1.7925
+
+# crear_postura: punta de la tenaza izquierda en [165, -5, 95] mm
+[tenaza.arco_a]
+J0 = -1.3223
+J1 = -2.5645
+J2 = -0.7291
+J3 = -0.9001
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [210, 10, 20] mm
+[tenaza.besito]
+J0 = -0.9387
+J1 = -1.9620
+J2 = -0.5650
+J3 = -1.0741
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [200, 75, -40] mm
+[tenaza.golpe_arriba]
+J0 = -0.2511
+J1 = -1.5329
+J2 = -0.7770
+J3 = -1.2310
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [160, 15, 100] mm
+[tenaza.arco_b]
+J0 = -1.1661
+J1 = -2.6215
+J2 = -0.7357
+J3 = -0.9989
+J4 = 0.0000
+
+# reverencia (bow) sin choque: J0 de cada tenaza +0.20 rad (en espejo); el clip bow de upstream mete una palma 19,8 mm en la otra
+[tenazas.reverencia_abierta]
+LF_J0_joint = -1.1090
+LF_J1_joint = -2.4435
+LF_J2_joint = -0.5236
+LF_J3_joint = -0.8494
+LF_J4_joint = -0.3491
+RF_J0_joint = 0.8472
+RF_J1_joint = -2.2689
+RF_J2_joint = 0.6109
+RF_J3_joint = 1.2431
+RF_J4_joint = 0.5468

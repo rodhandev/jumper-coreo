@@ -53,6 +53,23 @@ def main(repo: Path, src: Path, dest: Path) -> None:
     lifted = {f: float((height[:, i] >= gestures.DOWN_TOL).mean())
               for i, f in enumerate(gestures.FEET)}
 
+    # Self-collision over the whole clip (every 5th row, the robot posed in the air): crear_postura checks one claw
+    # at a time, so two claws posed together -- `tenazas besito` -- can still meet only here.
+    mj, m, d = robot.mujoco, robot.model, robot.data
+    hits = {}
+    for k in range(0, len(q), 5):
+        d.qpos[:] = 0.0
+        d.qpos[2], d.qpos[3] = 1.0, 1.0
+        d.qpos[robot.q_adr] = q[k]
+        mj.mj_forward(m, d)
+        for c in d.contact[:d.ncon]:
+            if c.dist < -0.001:
+                pair = "/".join(sorted(mj.mj_id2name(m, mj.mjtObj.mjOBJ_BODY, m.geom_bodyid[g]) or "" for g in (c.geom1, c.geom2)))
+                hits.setdefault(pair, k * dt)
+    if hits:
+        first = ", ".join(f"{p} at {t:.2f} s" for p, t in sorted(hits.items(), key=lambda x: x[1])[:4])
+        raise SystemExit(f"{src}: the robot runs into itself: {first}")
+
     tilt = np.degrees(np.hypot(pose[:, 3], pose[:, 4]))
     bad = np.nonzero(tilt > TILT_MAX)[0]
     if len(bad):

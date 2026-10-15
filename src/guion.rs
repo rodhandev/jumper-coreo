@@ -45,8 +45,20 @@ impl Curva {
 
 #[derive(Debug)]
 pub enum Orden {
-    Postura { grupo: String, postura: String, en: f64, curva: Curva },
-    Alternar { grupo: String, a: String, b: String, veces: u32, cada: f64, curva: Curva },
+    Postura {
+        grupo: String,
+        postura: String,
+        en: f64,
+        curva: Curva,
+    },
+    Alternar {
+        grupo: String,
+        a: String,
+        b: String,
+        veces: u32,
+        cada: f64,
+        curva: Curva,
+    },
     Cara(String),
     Sonido(String),
     Fin,
@@ -89,7 +101,9 @@ impl Guion {
     /// secas es un pulso de la pista (interpolado entre dos, extrapolado al tempo medio
     /// después del último), contado desde el primero.
     fn instante(&self, s: &str) -> Result<f64, String> {
-        let Some(p) = &self.pulsos_musica else { return self.segundos(s) };
+        let Some(p) = &self.pulsos_musica else {
+            return self.segundos(s);
+        };
         if s.ends_with('s') {
             return self.segundos(s);
         }
@@ -126,7 +140,10 @@ pub fn leer(texto: &str, dir: &std::path::Path) -> Result<Guion, String> {
         let err = |e: String| format!("{n}: {e}\n    {}", crudo.trim());
         let p: Vec<&str> = linea.split_whitespace().collect();
         if p[0] == "pulso" {
-            let bpm: f64 = p.get(1).and_then(|x| x.parse().ok()).ok_or_else(|| err("pulso <bpm>".into()))?;
+            let bpm: f64 = p
+                .get(1)
+                .and_then(|x| x.parse().ok())
+                .ok_or_else(|| err("pulso <bpm>".into()))?;
             if !g.lineas.is_empty() {
                 return Err(err("`pulso` va antes de la primera orden".into()));
             }
@@ -135,10 +152,14 @@ pub fn leer(texto: &str, dir: &std::path::Path) -> Result<Guion, String> {
         }
         if p[0] == "musica" {
             let f = dir.join(p.get(1).ok_or_else(|| err("musica <pulsos.json>".into()))?);
-            let texto = std::fs::read_to_string(&f).map_err(|e| err(format!("{}: {e}", f.display())))?;
-            let ps: Pulsos = serde_json::from_str(&texto).map_err(|e| err(format!("{}: {e}", f.display())))?;
+            let texto =
+                std::fs::read_to_string(&f).map_err(|e| err(format!("{}: {e}", f.display())))?;
+            let ps: Pulsos =
+                serde_json::from_str(&texto).map_err(|e| err(format!("{}: {e}", f.display())))?;
             if !g.lineas.is_empty() || g.pulso.is_some() {
-                return Err(err("`musica` va antes de la primera orden y en lugar de `pulso`".into()));
+                return Err(err(
+                    "`musica` va antes de la primera orden y en lugar de `pulso`".into(),
+                ));
             }
             if ps.pulsos.len() < 2 {
                 return Err(err(format!("{}: menos de dos pulsos", f.display())));
@@ -147,7 +168,9 @@ pub fn leer(texto: &str, dir: &std::path::Path) -> Result<Guion, String> {
             g.pulsos_musica = Some(ps.pulsos);
             continue;
         }
-        let t = p[0].strip_prefix('@').ok_or_else(|| err("una orden empieza con @<tiempo>".into()))?;
+        let t = p[0]
+            .strip_prefix('@')
+            .ok_or_else(|| err("una orden empieza con @<tiempo>".into()))?;
         let t = g.instante(t).map_err(err)?;
         let orden = leer_orden(&g, &p[1..]).map_err(err)?;
         g.lineas.push(Linea { n, t, orden });
@@ -161,21 +184,37 @@ pub fn leer(texto: &str, dir: &std::path::Path) -> Result<Guion, String> {
 fn leer_orden(g: &Guion, p: &[&str]) -> Result<Orden, String> {
     let defecto = if g.pulso.is_some() { "1" } else { "0.5s" };
     // Las opciones «en X», «cada X», «veces N» y la curva, en cualquier orden.
-    let valor = |clave: &str| p.iter().position(|w| *w == clave).and_then(|i| p.get(i + 1)).copied();
-    let curva = if p.contains(&"lineal") { Curva::Lineal } else { Curva::Suave };
+    let valor = |clave: &str| {
+        p.iter()
+            .position(|w| *w == clave)
+            .and_then(|i| p.get(i + 1))
+            .copied()
+    };
+    let curva = if p.contains(&"lineal") {
+        Curva::Lineal
+    } else {
+        Curva::Suave
+    };
     match p.first().copied() {
         Some("cara") => Ok(Orden::Cara(p.get(1).ok_or("cara <expresión>")?.to_string())),
-        Some("sonido") => Ok(Orden::Sonido(p.get(1).ok_or("sonido <nombre>")?.to_string())),
+        Some("sonido") => Ok(Orden::Sonido(
+            p.get(1).ok_or("sonido <nombre>")?.to_string(),
+        )),
         Some("fin") => Ok(Orden::Fin),
         Some("alternar") => {
             if p.len() < 4 {
-                return Err("alternar <grupo> <postura_a> <postura_b> veces <n> cada <tiempo>".into());
+                return Err(
+                    "alternar <grupo> <postura_a> <postura_b> veces <n> cada <tiempo>".into(),
+                );
             }
             Ok(Orden::Alternar {
                 grupo: p[1].into(),
                 a: p[2].into(),
                 b: p[3].into(),
-                veces: valor("veces").unwrap_or("2").parse().map_err(|_| "veces <n>: n entero")?,
+                veces: valor("veces")
+                    .unwrap_or("2")
+                    .parse()
+                    .map_err(|_| "veces <n>: n entero")?,
                 cada: g.segundos(valor("cada").unwrap_or(defecto))?,
                 curva,
             })
@@ -234,8 +273,17 @@ pub fn compilar(g: &Guion, robot: &Robot) -> Result<Clip, String> {
     let mut movs: Vec<Mov> = Vec::new();
     let mut cara = Vec::new();
     let mut sonidos = Vec::new();
-    let mut empujar = |n: usize, t0: f64, en: f64, grupo: &str, postura: &str, curva: Curva| -> Result<(), String> {
-        for (joint, objetivo) in robot.objetivos(grupo, postura).map_err(|e| format!("línea {n}: {e}"))? {
+    let mut empujar = |n: usize,
+                       t0: f64,
+                       en: f64,
+                       grupo: &str,
+                       postura: &str,
+                       curva: Curva|
+     -> Result<(), String> {
+        for (joint, objetivo) in robot
+            .objetivos(grupo, postura)
+            .map_err(|e| format!("línea {n}: {e}"))?
+        {
             let [lo, hi] = robot.range[joint];
             if objetivo < lo || objetivo > hi {
                 return Err(format!(
@@ -243,17 +291,39 @@ pub fn compilar(g: &Guion, robot: &Robot) -> Result<Clip, String> {
                     robot.joints[joint]
                 ));
             }
-            movs.push(Mov { n, t0, t1: t0 + en.max(1e-6), joint, objetivo, curva });
+            movs.push(Mov {
+                n,
+                t0,
+                t1: t0 + en.max(1e-6),
+                joint,
+                objetivo,
+                curva,
+            });
         }
         Ok(())
     };
     for l in &g.lineas {
         if l.t > fin {
-            return Err(format!("línea {}: la orden está después de `fin` ({:.2} s > {fin:.2} s)", l.n, l.t));
+            return Err(format!(
+                "línea {}: la orden está después de `fin` ({:.2} s > {fin:.2} s)",
+                l.n, l.t
+            ));
         }
         match &l.orden {
-            Orden::Postura { grupo, postura, en, curva } => empujar(l.n, l.t, *en, grupo, postura, *curva)?,
-            Orden::Alternar { grupo, a, b, veces, cada, curva } => {
+            Orden::Postura {
+                grupo,
+                postura,
+                en,
+                curva,
+            } => empujar(l.n, l.t, *en, grupo, postura, *curva)?,
+            Orden::Alternar {
+                grupo,
+                a,
+                b,
+                veces,
+                cada,
+                curva,
+            } => {
                 for k in 0..*veces {
                     let p = if k % 2 == 0 { a } else { b };
                     empujar(l.n, l.t + k as f64 * cada, *cada, grupo, p, *curva)?;
@@ -309,8 +379,15 @@ pub fn compilar(g: &Guion, robot: &Robot) -> Result<Clip, String> {
         ));
     }
     let pulsos = match (&g.pulsos_musica, g.pulso) {
-        (Some(p), _) => p.iter().map(|t| t - p[0]).take_while(|t| *t <= fin + 1e-9).collect(),
-        (None, Some(bpm)) => (0..).map(|i| i as f64 * 60.0 / bpm).take_while(|t| *t <= fin + 1e-9).collect(),
+        (Some(p), _) => p
+            .iter()
+            .map(|t| t - p[0])
+            .take_while(|t| *t <= fin + 1e-9)
+            .collect(),
+        (None, Some(bpm)) => (0..)
+            .map(|i| i as f64 * 60.0 / bpm)
+            .take_while(|t| *t <= fin + 1e-9)
+            .collect(),
         (None, None) => Vec::new(),
     };
     Ok(Clip {
@@ -323,7 +400,10 @@ pub fn compilar(g: &Guion, robot: &Robot) -> Result<Clip, String> {
         q,
         cara,
         sonidos,
-        informe: Informe { vel_max, vel_max_en },
+        informe: Informe {
+            vel_max,
+            vel_max_en,
+        },
     })
 }
 
@@ -333,7 +413,11 @@ mod pruebas {
 
     #[test]
     fn los_tiempos_van_en_pulsos_salvo_con_s() {
-        let g = leer("pulso 120\n@2 cara a\n@1.5s cara b\n@3 fin\n", std::path::Path::new(".")).unwrap();
+        let g = leer(
+            "pulso 120\n@2 cara a\n@1.5s cara b\n@3 fin\n",
+            std::path::Path::new("."),
+        )
+        .unwrap();
         assert_eq!(g.lineas[0].t, 1.0); // 2 pulsos a 120 bpm
         assert_eq!(g.lineas[1].t, 1.5);
     }
@@ -348,7 +432,11 @@ mod pruebas {
         let dir = std::env::temp_dir().join(format!("coreo-prueba-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         // Un tempo que se acelera: el pulso 2 cae a 1.0 s de la pista y no a 2 x 60/100.
-        std::fs::write(dir.join("p.json"), r#"{"bpm": 100, "pulsos": [0.5, 1.0, 1.5], "compases": [0.5]}"#).unwrap();
+        std::fs::write(
+            dir.join("p.json"),
+            r#"{"bpm": 100, "pulsos": [0.5, 1.0, 1.5], "compases": [0.5]}"#,
+        )
+        .unwrap();
         let g = leer("musica p.json\n@1.5 cara a\n@3 fin\n", &dir).unwrap();
         assert!((g.lineas[0].t - 0.75).abs() < 1e-9); // entre el pulso 1 (0.5) y el 2 (1.0), desde 0.5
         assert!((g.lineas[1].t - (1.0 + 0.6)).abs() < 1e-9); // pasado el último, al tempo medio

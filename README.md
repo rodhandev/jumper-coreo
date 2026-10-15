@@ -30,6 +30,9 @@ What it does for you:
   does not have to know. Two claws up from standing: 50° of tilt without it, 0.1° with it.
 - **On the real beat of a track**: `musica pulsos.json` (from `zym-compas pulsos`) instead of
   `pulso`, and `@8` is the track's 8th beat even if the tempo drifts.
+- **Its own sound set**: `coreo sonidos <dir>` synthesises 31 classified cues (greeting, celebration, thinking,
+  error, …) in a crab timbre — claw clacks and chirps — with no third-party samples, so they are Apache-2.0 like
+  the rest and free to reuse.
 - **Refuses what the robot cannot do**, with the line: unknown postures, joints past their
   range, joint speed over 12 rad/s, base tilt over 17° (both measured on Jumper's trained
   dances).

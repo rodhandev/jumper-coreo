@@ -15,6 +15,7 @@
 
 mod guion;
 mod robot;
+mod sonidos;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -70,13 +71,21 @@ fn run(args: &[String]) -> Result<(), String> {
             );
             Ok(())
         }
+        Some("sonidos") => {
+            let dir = PathBuf::from(args.get(1).ok_or("coreo sonidos <dir>")?);
+            for (cat, dur) in sonidos::generar(&dir)? {
+                println!("{cat:22} {dur:.2} s");
+            }
+            println!("-> {}", dir.display());
+            Ok(())
+        }
         Some("posturas") => {
             for (grupo, nombres) in robot.catalogo() {
                 println!("{grupo}: {}", nombres.join(", "));
             }
             Ok(())
         }
-        _ => Err("uso: coreo compilar <guion> -o <clip.json> | coreo posturas  \
+        _ => Err("uso: coreo compilar <guion> -o <clip.json> | coreo posturas | coreo sonidos <dir>  \
                   [--robot robot.json] [--posturas posturas/base.toml]"
             .into()),
     }

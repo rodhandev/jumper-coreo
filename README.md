@@ -33,6 +33,9 @@ What it does for you:
 - **An automatic dancer**: `coreo bailar pulsos.json --estilo romantico|rapido|clasico` writes the whole script
   from a track's beats — a step from the style's library (`pasos/`: violin, kisses, sway, claw taps, bow, wave,
   head-scratch…) on every bar, never the same twice in a row — and the script stays text you can tune.
+- **Claw detours**: where going straight from one claw pose to the next would sweep a claw through the other
+  one or through the shell, `puente/desviar.py` lifts both claws over the top along a smooth bump, as small as
+  works; a pose that collides while held is reported as the posture's fault instead.
 - **Postures by position** (`puente/crear_postura.py`): «claw tip here», «body 15 mm left and 5° rolled»; it solves
   the IK and refuses what does not reach or runs into the body. Whole clips are checked for self-collision too.
 - **Its own sound set**: `coreo sonidos <dir>` synthesises 31 classified cues (greeting, celebration, thinking,
@@ -47,7 +50,7 @@ What it does for you:
 ```bash
 cd ../jumper && . .venv/bin/activate                     # Jumper's environment (MuJoCo, its tools)
 python ../coreo/puente/construir.py . ../coreo/guiones/saludo.guion [--musica track.wav]
-#   [1] compile (Rust)  [2] balance  [3] .npz  [4] preview video -> ../coreo/salidas/
+#   [1] compile (Rust)  [2] claw detours  [2b] balance  [3] .npz  [4] preview video -> ../coreo/salidas/
 cp ../coreo/salidas/saludo.npz tasks/jumper/coreo/media/   # one clip in media/ at a time
 python scripts/train.py --task jumper.coreo               # learn it
 ```
@@ -56,6 +59,7 @@ python scripts/train.py --task jumper.coreo               # learn it
 |---|---|
 | `src/` | script parser, postures, mirroring, interpolation, checks (Rust, no runtime deps beyond serde/toml) |
 | `puente/construir.py` | the whole pipeline in one command |
+| `puente/desviar.py` | claw detours over the top where a transition self-collides |
 | `puente/equilibrar.py` | automatic balance (IK of the four legs while a claw is up) |
 | `puente/clip_a_npz.py` | base pose from Jumper's resting-floor solver (`tools/import_wbc_gestures.py`), writes the training `.npz` |
 | `puente/ver_clip.py` | kinematic preview video, face screen following the script |

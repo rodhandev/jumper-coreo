@@ -1,9 +1,9 @@
 """One command from a guion to a trainable clip and its preview.
 
-    guion --coreo compilar--> clip.json --equilibrar--> clip-eq.json --clip_a_npz--> clip.npz
-                                                                       --ver_clip--> clip.mp4
+    guion --coreo compilar--> clip.json --desviar--> clip-d.json --equilibrar--> clip-eq.json
+          --clip_a_npz--> clip.npz --ver_clip--> clip.mp4
 
-    python construir.py <jumper checkout> <guion> [--dest <dir>] [--sin-equilibrio]
+    python construir.py <jumper checkout> <guion> [--dest <dir>] [--sin-desvio] [--sin-equilibrio]
                         [--modelo <xml>] [--caras <dir>] [--musica <pista>] [--sin-video]
 
 Run from the jumper checkout's venv. Every step is the script of the same name in this
@@ -19,7 +19,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 COREO = HERE.parent
 #: The same limit the Rust side checks (src/robot.rs, VEL_MAX), re-checked here
-#: because the balance pass rewrites the legs.
+#: because the detour rewrites the claws and the balance pass the legs.
 VEL_MAX = 12.0
 
 
@@ -47,8 +47,13 @@ def main() -> None:
     run("cargo", "run", "--release", "--offline", "-q", "--manifest-path", COREO / "Cargo.toml",
         "--", "compilar", guion, "-o", dest / f"{name}.json")
     clip = dest / f"{name}.json"
+    if "--sin-desvio" not in sys.argv:
+        # Before balancing: the detour lifts the claws, and the balance has to see them lifted.
+        print("[2] desviar")
+        run(py, HERE / "desviar.py", repo, clip, dest / f"{name}-d.json")
+        clip = dest / f"{name}-d.json"
     if "--sin-equilibrio" not in sys.argv:
-        print("[2] equilibrar")
+        print("[2b] equilibrar")
         run(py, HERE / "equilibrar.py", repo, clip, dest / f"{name}-eq.json")
         clip = dest / f"{name}-eq.json"
         c = json.loads(clip.read_text())

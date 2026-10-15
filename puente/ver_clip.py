@@ -97,8 +97,10 @@ def face_at(t):
     return now[-1] if now else None
 
 
-step = max(1, round(1.0 / (fps * dt)))
-for k in range(0, len(q), step):
+# One frame every 1/fps s, each the row nearest its time: a fixed row stride (round(1 / (fps * dt))) is 2 for a
+# 50 Hz clip at 30 fps, which played the clip 20 % fast and drifted it off the music.
+rows = np.minimum(np.round(np.arange(0.0, len(q) * dt, 1.0 / fps) / dt).astype(int), len(q) - 1)
+for k in rows:
     x, y, zz, roll, pitch, yaw = (float(z[f"body_{a}"][k]) for a in dances.AXES)
     data.qpos[free:free + 3] = (x, y, zz)
     quat = np.zeros(4)
@@ -114,4 +116,4 @@ for k in range(0, len(q), step):
     ff.stdin.write(r.render().tobytes())
 ff.stdin.close()
 ff.wait()
-print(f"{dest}: {len(range(0, len(q), step))} frames at {fps} fps")
+print(f"{dest}: {len(rows)} frames at {fps} fps")

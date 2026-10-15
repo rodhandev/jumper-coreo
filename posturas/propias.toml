@@ -164,3 +164,19 @@ J1 = -2.0066
 J2 = -0.5098
 J3 = -1.1334
 J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [150, 45, 60] mm
+[tenaza.besito_cerca]
+J0 = -0.4498
+J1 = -2.3794
+J2 = -0.6725
+J3 = -1.5869
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [235, 62, 45] mm
+[tenaza.besito_lejos]
+J0 = -1.0074
+J1 = -2.2826
+J2 = -0.3504
+J3 = -0.7998
+J4 = -0.6000

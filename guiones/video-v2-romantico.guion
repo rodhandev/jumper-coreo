@@ -1,0 +1,18 @@
+# video-v2-romantico.guion — vídeo 2, variante A («Jumper, play something romantic»), sobre la pista romántica
+# propia de 92 bpm. Partitura emocional: salidas/videos/v2/partitura.json.
+musica /media/rodri/Rodri4sci/jumper-workspace/salidas/musica/jumper-romantico-1.pulsos.json
+
+@0  cara maravilla
+@0  sonido atencion                 # curiosidad: despierta al oír su nombre
+@1  paso saludo                     # 8 pulsos
+@9  paso pensar                     # expectativa: se rasca la cabeza (4)
+@13 paso inclinarse                 # sorpresa: «¡ah!» (4)
+@13 cara sonrisa
+@13 sonido sorpresa
+@17 paso violin                     # MOMENTO CLAVE (8)
+@25 paso besitos                    # PICO de cariño: única vez de la cara de espirales (4)
+@29 paso mecerse                    # respiro (4)
+@33 paso reverencia                 # cierre (8)
+@33 cara jugueton
+@33 sonido celebracion
+@43 fin

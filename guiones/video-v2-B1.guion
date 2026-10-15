@@ -1,0 +1,14 @@
+# video-v2-B1.guion — variante B (sketch), parte 1: «Jumper, turn down the heating» → entiende «turn up the beat».
+musica /media/rodri/Rodri4sci/jumper-workspace/salidas/musica/jumper-alegre-2.pulsos.json
+@0  cara maravilla
+@0  sonido atencion
+@1  paso pensar
+@5  cara jugueton
+@5  sonido risa
+@5  paso golpes
+@9  paso agacharse
+@13 paso giro
+@17 paso golpes
+@21 cara maravilla
+@21 sonido duda_corta               # «…no, something ROMANTIC»
+@23 fin

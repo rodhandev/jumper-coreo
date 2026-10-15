@@ -1,12 +1,13 @@
 """Create a posture by where things should be, not by joint angles.
 
     python crear_postura.py <jumper> patas  <nombre> [--dx mm] [--dy mm] [--dz mm] [--roll deg] [--pitch deg] [--yaw deg]
-    python crear_postura.py <jumper> tenaza <nombre> --punta X Y Z [--desde <postura>]
+    python crear_postura.py <jumper> tenaza <nombre> --punta X Y Z [--desde <postura>] [--pinza RAD]
                                          (mm, base frame; the LEFT claw, coreo mirrors it)
 
 `patas`: the body moved by (dx, dy, dz) and turned by roll/pitch/yaw over feet that stay where they stand at
 HOME -- sway, crouch, lean -- by IK of the four legs' three joints. `tenaza`: the left claw's tip taken to a
-point (J0..J3; J4 stays at HOME). `--desde` starts the IK from an existing claw posture: a point a few mm from a
+point (J0..J3). `--pinza` opens the pincer: J4 of the left claw, 0 closed (HOME), negative open, -1.6 at most
+(checked by rendering, 15-oct); without it J4 stays at HOME. `--desde` starts the IK from an existing claw posture: a point a few mm from a
 known pose is found from that pose, where random starts can land in another fold of the arm. Reference points at HOME, base frame, mm: claw tips (187, +-73, -98),
 the top of the shell z = 72 at x -112..94, the face screen x 66..91, z 32..65.
 
@@ -145,6 +146,9 @@ def main() -> None:
             if best is None or err < best[1]:
                 best = (row, err)
         row, err = best
+        if "--pinza" in sys.argv:
+            j4 = R.names.index("LF_J4_joint")
+            row[j4] = float(np.clip(opt("--pinza"), *R.range[j4]))
         values = {f"J{j}": row[R.names.index(f'LF_J{j}_joint')] for j in range(5)}
         cabecera = f"tenaza.{nombre}"
         nota = f"crear_postura: punta de la tenaza izquierda en {np.round(punta * 1000).astype(int).tolist()} mm"

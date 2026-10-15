@@ -1,8 +1,11 @@
-# Junta las puntas de las tenazas delante, como mandando besitos, dos veces.
+# Besitos al aire (Rodhan, 15-oct): las tenazas, cerradas junto a la cara, se alejan abriéndose un poco
+# -- el beso que se expande -- y vuelven; dos veces, con ojos de corazón.
 dura 4
-@0 cara ternura
+@0 cara corazones
 @0 sonido carino
-@0 tenazas besito en 1
-@1.5 tenazas arriba_b en 0.5
-@2 tenazas besito en 1
+@0 tenazas besito_cerca en 0.7
+@0.7 tenazas besito_lejos en 0.8
+@1.5 tenazas besito_cerca en 0.5
+@2 tenazas besito_lejos en 0.8
+@2.8 sonido carino
 @3 tenazas reposo en 1

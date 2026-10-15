@@ -5,6 +5,7 @@ solver and the 22 joints, drawn with any MJCF (the Zymbot colours, for example).
 
     python ver_clip.py <jumper checkout> <clip.npz> <model.xml> <out.mp4> [--fps 30]
                        [--caras <dir de PNG> --guion <clip.json>] [--musica <pista>]
+                       [--tam 1080x1920] [--camara 0.75,135,-18]
 
 With `--caras` and a model that has a `cara` geom (recolorear.py --cara), the face
 screen follows the guion's `cara` orders: each PNG in the directory is one
@@ -56,11 +57,12 @@ data = mujoco.MjData(model)
 adr = [model.jnt_qposadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, n)] for n in names]
 free = model.jnt_qposadr[next(j for j in range(model.njnt) if model.jnt_type[j] == 0)]
 
-W, H = 1024, 600
+W, H = (int(v) for v in (arg("--tam") or "1024x600").split("x"))
 model.vis.global_.offwidth, model.vis.global_.offheight = W, H
 r = mujoco.Renderer(model, H, W)
 cam = mujoco.MjvCamera()
-cam.distance, cam.azimuth, cam.elevation = 0.75, 135, -18
+# --camara DIST,AZIMUT,ELEVACION (m, grados): 160 o 180 de azimut mira a la cara; 135 de tres cuartos.
+cam.distance, cam.azimuth, cam.elevation = (float(v) for v in (arg("--camara") or "0.75,135,-18").split(","))
 audio = ["-ss", f"{desfase:.3f}", "-i", musica, "-shortest", "-c:a", "aac"] if musica else []
 ff = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
                        "-s", f"{W}x{H}", "-r", str(fps), "-i", "-", *audio, "-pix_fmt", "yuv420p", str(dest)],

@@ -5,6 +5,7 @@
 
     python construir.py <jumper checkout> <guion> [--dest <dir>] [--sin-desvio] [--sin-equilibrio]
                         [--modelo <xml>] [--caras <dir>] [--musica <pista>] [--sin-video]
+                        [--tam 1080x1920] [--camara DIST,AZIMUT,ELEVACION]
 
 Run from the jumper checkout's venv. Every step is the script of the same name in this
 directory, run as is; a step that refuses (a posture that does not exist, a joint too
@@ -69,6 +70,7 @@ def main() -> None:
         extra = ["--guion", clip]
         extra += ["--caras", arg("--caras")] if arg("--caras") else []
         extra += ["--musica", arg("--musica")] if arg("--musica") else []
+        extra += [x for k in ("--tam", "--camara") if arg(k) for x in (k, arg(k))]
         run(py, HERE / "ver_clip.py", repo, dest / f"{name}.npz", model, dest / f"{name}.mp4", *extra)
     print(f"listo: {dest / (name + '.npz')}")
 

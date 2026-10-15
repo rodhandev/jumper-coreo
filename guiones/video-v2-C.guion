@@ -1,0 +1,13 @@
+# video-v2-C.guion — variante C (antes/después): Jumper con el teléfono encima recibe un aviso, piensa y pone tu canción.
+musica /media/rodri/Rodri4sci/jumper-workspace/salidas/musica/jumper-romantico-1.pulsos.json
+@0  cara sonrisa
+@0  sonido atencion                 # llega una notificación al teléfono
+@1  paso pensar
+@5  sonido afirmacion_corta
+@5  paso violin
+@13 paso besitos
+@17 paso mecerse
+@21 paso reverencia
+@21 cara jugueton
+@21 sonido celebracion
+@31 fin

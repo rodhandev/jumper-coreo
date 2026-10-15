@@ -45,11 +45,26 @@ spec = mujoco.MjSpec.from_file(str(xml))
 floor = spec.worldbody.add_geom(type=mujoco.mjtGeom.mjGEOM_PLANE, size=[3, 3, 0.1])
 floor.rgba = [0.86, 0.88, 0.9, 1]
 spec.worldbody.add_light(pos=[0.5, -0.5, 1.5], dir=[-0.3, 0.3, -1], castshadow=True)
+def _material(name, file):
+    spec.add_texture(name=name, type=mujoco.mjtTexture.mjTEXTURE_2D, file=str(file))
+    mat = spec.add_material(name=name, emission=0.8, specular=0.3)
+    mat.textures[mujoco.mjtTextureRole.mjTEXROLE_RGB] = name
+
+
+# Two kinds of face: the older flat `cara` panel, or the two round `ojo_der`/`ojo_izq` displays on the visor
+# (recolorear.py --ojos), which take each face image cut in two (the viewer's left half is the robot's right eye).
+ojos = {g.name for g in spec.geoms} >= {"ojo_der", "ojo_izq"}
 if caras is not None:
+    if ojos:
+        sys.path.insert(0, str(Path(xml).resolve().parent))
+        from recolorear import eye_crops  # noqa: E402
     for png in sorted(caras.glob("*.png")):
-        spec.add_texture(name=f"cara_{png.stem}", type=mujoco.mjtTexture.mjTEXTURE_2D, file=str(png.resolve()))
-        mat = spec.add_material(name=f"cara_{png.stem}", emission=0.8, specular=0.3)
-        mat.textures[mujoco.mjtTextureRole.mjTEXROLE_RGB] = f"cara_{png.stem}"
+        if ojos:
+            der, izq = eye_crops(png.resolve(), caras.resolve() / ".ojos")
+            _material(f"ojo_der_{png.stem}", der)
+            _material(f"ojo_izq_{png.stem}", izq)
+        else:
+            _material(f"cara_{png.stem}", png.resolve())
 spec.visual.headlight.ambient = [0.45, 0.45, 0.45]
 spec.visual.headlight.diffuse = [0.6, 0.6, 0.6]
 model = spec.compile()
@@ -67,9 +82,13 @@ audio = ["-ss", f"{desfase:.3f}", "-i", musica, "-shortest", "-c:a", "aac"] if m
 ff = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
                        "-s", f"{W}x{H}", "-r", str(fps), "-i", "-", *audio, "-pix_fmt", "yuv420p", str(dest)],
                       stdin=subprocess.PIPE)
-cara_geom = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "cara")
+gid = lambda n: mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, n)  # noqa: E731
+mid = lambda n: mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_MATERIAL, n)  # noqa: E731
+# (geom, material prefix) pairs the face orders drive.
+pantallas = [(gid("ojo_der"), "ojo_der_"), (gid("ojo_izq"), "ojo_izq_")] if ojos else [(gid("cara"), "cara_")]
+pantallas = [(g, p) for g, p in pantallas if g >= 0]
 for _, e in ordenes:
-    if mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_MATERIAL, f"cara_{e}") < 0:
+    if any(mid(p + e) < 0 for _, p in pantallas):
         raise SystemExit(f"the guion asks for face «{e}» and {caras} has no {e}.png")
 
 
@@ -87,8 +106,9 @@ for k in range(0, len(q), step):
     data.qpos[free + 3:free + 7] = quat
     data.qpos[adr] = q[k]
     mujoco.mj_kinematics(model, data)
-    if cara_geom >= 0 and (e := face_at(k * dt)) is not None:
-        model.geom_matid[cara_geom] = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_MATERIAL, f"cara_{e}")
+    if (e := face_at(k * dt)) is not None:
+        for g, p in pantallas:
+            model.geom_matid[g] = mid(p + e)
     cam.lookat[:] = (x, y, 0.08)
     r.update_scene(data, cam)
     ff.stdin.write(r.render().tobytes())

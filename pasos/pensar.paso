@@ -1,0 +1,7 @@
+# Se rasca la cabeza mientras piensa (el agente procesando una orden).
+dura 4
+@0 cara maravilla
+@0 sonido pensando
+@0 tenaza_izq rascar_a en 1
+@1 alternar tenaza_izq rascar_b rascar_a veces 4 cada 0.5
+@3 tenaza_izq reposo en 1

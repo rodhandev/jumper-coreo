@@ -1,0 +1,10 @@
+# «Toca el violín»: la tenaza izquierda arriba hace de violín y la derecha de arco; se mece despacio.
+dura 8
+@0 cara ternura
+@0 tenaza_izq arriba en 1
+@0 patas mecer_izq en 2
+@1 alternar tenaza_der arco_a arco_b veces 5 cada 1
+@4 patas mecer_der en 2
+@6 tenaza_der reposo en 1     # el arco vuelve antes: las dos a la vez se cruzan
+@7 tenaza_izq reposo en 1
+@7 patas de_pie en 1

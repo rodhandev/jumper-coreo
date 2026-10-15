@@ -1,0 +1,5 @@
+# Gira el cuerpo a un lado y al otro sin mover los pies.
+dura 4
+@0 patas girar_izq en 1
+@1 patas girar_der en 2
+@3 patas de_pie en 1

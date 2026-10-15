@@ -121,22 +121,6 @@ RR_J0_joint = -0.3517
 RR_J1_joint = -0.5228
 RR_J2_joint = 1.7925
 
-# crear_postura: punta de la tenaza izquierda en [165, -5, 95] mm
-[tenaza.arco_a]
-J0 = -1.3223
-J1 = -2.5645
-J2 = -0.7291
-J3 = -0.9001
-J4 = 0.0000
-
-# crear_postura: punta de la tenaza izquierda en [210, 10, 20] mm
-[tenaza.besito]
-J0 = -0.9387
-J1 = -1.9620
-J2 = -0.5650
-J3 = -1.0741
-J4 = 0.0000
-
 # crear_postura: punta de la tenaza izquierda en [200, 75, -40] mm
 [tenaza.golpe_arriba]
 J0 = -0.2511
@@ -145,15 +129,6 @@ J2 = -0.7770
 J3 = -1.2310
 J4 = 0.0000
 
-# crear_postura: punta de la tenaza izquierda en [160, 15, 100] mm
-[tenaza.arco_b]
-J0 = -1.1661
-J1 = -2.6215
-J2 = -0.7357
-J3 = -0.9989
-J4 = 0.0000
-
-# reverencia (bow) sin choque: J0 de cada tenaza +0.20 rad (en espejo); el clip bow de upstream mete una palma 19,8 mm en la otra
 [tenazas.reverencia_abierta]
 LF_J0_joint = -1.1090
 LF_J1_joint = -2.4435
@@ -165,3 +140,27 @@ RF_J1_joint = -2.2689
 RF_J2_joint = 0.6109
 RF_J3_joint = 1.2431
 RF_J4_joint = 0.5468
+
+# crear_postura: punta de la tenaza izquierda en [175, 18, 65] mm
+[tenaza.arco_a]
+J0 = -0.8274
+J1 = -2.3053
+J2 = -0.7285
+J3 = -1.1864
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [160, 28, 100] mm
+[tenaza.arco_b]
+J0 = -1.0358
+J1 = -2.6286
+J2 = -0.7316
+J3 = -1.0497
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [215, 52, 25] mm
+[tenaza.besito]
+J0 = -0.7029
+J1 = -2.0066
+J2 = -0.5098
+J3 = -1.1334
+J4 = 0.0000

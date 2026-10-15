@@ -13,6 +13,7 @@
 //! no existen son un error con la línea; un tope superado también, nunca un recorte
 //! silencioso.
 
+mod bailar;
 mod guion;
 mod robot;
 mod sonidos;
@@ -55,7 +56,8 @@ fn run(args: &[String]) -> Result<(), String> {
             let dir = std::path::Path::new(src)
                 .parent()
                 .unwrap_or(std::path::Path::new("."));
-            let g = guion::leer(&texto, dir).map_err(|e| format!("{src}:{e}"))?;
+            let pasos = opt(args, "--pasos", &base.join("pasos").to_string_lossy());
+            let g = guion::leer(&texto, dir, &pasos).map_err(|e| format!("{src}:{e}"))?;
             let clip = guion::compilar(&g, &robot).map_err(|e| format!("{src}: {e}"))?;
             std::fs::write(&dest, serde_json::to_string(&clip).unwrap())
                 .map_err(|e| format!("{}: {e}", dest.display()))?;
@@ -77,6 +79,18 @@ fn run(args: &[String]) -> Result<(), String> {
             );
             Ok(())
         }
+        Some("bailar") => {
+            let src = PathBuf::from(args.get(1).ok_or("coreo bailar <pulsos.json> --estilo <estilo> -o <baile.guion>")?);
+            let estilo = args.iter().position(|a| a == "--estilo").and_then(|i| args.get(i + 1)).ok_or("falta --estilo")?;
+            let compases = args.iter().position(|a| a == "--compases").and_then(|i| args.get(i + 1)).and_then(|x| x.parse().ok());
+            let semilla = args.iter().position(|a| a == "--semilla").and_then(|i| args.get(i + 1)).and_then(|x| x.parse().ok()).unwrap_or(0);
+            let pasos = opt(args, "--pasos", &base.join("pasos").to_string_lossy());
+            let dest = opt(args, "-o", "baile.guion");
+            let g = bailar::bailar(&src, estilo, compases, semilla, &pasos)?;
+            std::fs::write(&dest, &g).map_err(|e| format!("{}: {e}", dest.display()))?;
+            println!("{} -> {}: {} pasos", src.display(), dest.display(), g.matches(" paso ").count());
+            Ok(())
+        }
         Some("sonidos") => {
             let dir = PathBuf::from(args.get(1).ok_or("coreo sonidos <dir>")?);
             for (cat, dur) in sonidos::generar(&dir)? {
@@ -92,7 +106,7 @@ fn run(args: &[String]) -> Result<(), String> {
             Ok(())
         }
         _ => Err(
-            "uso: coreo compilar <guion> -o <clip.json> | coreo posturas | coreo sonidos <dir>  \
+            "uso: coreo compilar <guion> -o <clip.json> | coreo posturas | coreo sonidos <dir> | coreo bailar <pulsos.json> --estilo <e> -o <guion>  \
                   [--robot robot.json] [--posturas posturas/]"
                 .into(),
         ),

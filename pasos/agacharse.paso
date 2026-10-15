@@ -1,0 +1,6 @@
+# Baja y sube con el pulso.
+dura 4
+@0 patas agachado en 1
+@1 patas alto en 1
+@2 patas agachado en 1
+@3 patas de_pie en 1

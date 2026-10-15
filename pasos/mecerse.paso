@@ -1,0 +1,6 @@
+# Se mece a los lados al pulso, como quien sigue una canción lenta.
+dura 4
+@0 patas mecer_izq en 1
+@1 patas mecer_der en 1
+@2 patas mecer_izq en 1
+@3 patas de_pie en 1

@@ -1,0 +1,9 @@
+# Saluda con la tenaza izquierda, apoyado hacia atrás.
+dura 8
+@0 cara sonrisa
+@0 sonido saludo
+@0 patas apoyo_atras en 1
+@0 tenaza_izq arriba en 1
+@1 alternar tenaza_izq arriba_b arriba veces 8 cada 0.5
+@6 tenaza_izq reposo en 1
+@6 patas de_pie en 2

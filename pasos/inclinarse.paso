@@ -1,0 +1,5 @@
+# Se inclina adelante y atrás, amplio, para música clásica.
+dura 4
+@0 patas inclinar_adelante en 1.5
+@2 patas inclinar_atras en 1.5
+@3.5 patas de_pie en 0.5

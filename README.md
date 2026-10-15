@@ -30,6 +30,11 @@ What it does for you:
   does not have to know. Two claws up from standing: 50° of tilt without it, 0.1° with it.
 - **On the real beat of a track**: `musica pulsos.json` (from `zym-compas pulsos`) instead of
   `pulso`, and `@8` is the track's 8th beat even if the tempo drifts.
+- **An automatic dancer**: `coreo bailar pulsos.json --estilo romantico|rapido|clasico` writes the whole script
+  from a track's beats — a step from the style's library (`pasos/`: violin, kisses, sway, claw taps, bow, wave,
+  head-scratch…) on every bar, never the same twice in a row — and the script stays text you can tune.
+- **Postures by position** (`puente/crear_postura.py`): «claw tip here», «body 15 mm left and 5° rolled»; it solves
+  the IK and refuses what does not reach or runs into the body. Whole clips are checked for self-collision too.
 - **Its own sound set**: `coreo sonidos <dir>` synthesises 31 classified cues (greeting, celebration, thinking,
   error, …) in a crab timbre — claw clacks and chirps — with no third-party samples, so they are Apache-2.0 like
   the rest and free to reuse.

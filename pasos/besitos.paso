@@ -1,0 +1,8 @@
+# Junta las puntas de las tenazas delante, como mandando besitos, dos veces.
+dura 4
+@0 cara ternura
+@0 sonido carino
+@0 tenazas besito en 1
+@1.5 tenazas arriba_b en 0.5
+@2 tenazas besito en 1
+@3 tenazas reposo en 1

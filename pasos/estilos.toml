@@ -1,0 +1,14 @@
+# Estilos del bailarín automático (`coreo bailar`): qué pasos usa, en qué orden de preferencia, y su cara.
+# Cada paso empieza y termina en neutral, así que cualquier orden encadena.
+
+[romantico]
+cara = "ternura"
+pasos = ["violin", "mecerse", "besitos", "mecerse", "saludo"]
+
+[rapido]
+cara = "jugueton"
+pasos = ["golpes", "agacharse", "giro", "golpes", "mecerse"]
+
+[clasico]
+cara = "sonrisa"
+pasos = ["reverencia", "inclinarse", "mecerse", "saludo"]

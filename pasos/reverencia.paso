@@ -1,0 +1,9 @@
+# Reverencia, pasando por arriba (de reposo a la reverencia directo las tenazas se cruzan).
+dura 8
+@0 cara sonrisa
+@0 patas reverencia en 1
+@1 tenazas arriba en 1
+@2 tenazas reverencia_abierta en 1
+@5 tenazas arriba en 1
+@6 tenazas reposo en 1
+@6 patas de_pie en 2

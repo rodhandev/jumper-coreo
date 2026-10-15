@@ -128,8 +128,9 @@ struct Pulsos {
 }
 
 /// Lee el texto de un guion; `dir` es su carpeta, desde la que se buscan los ficheros que
-/// nombra. Los errores llevan el número de línea delante.
-pub fn leer(texto: &str, dir: &std::path::Path) -> Result<Guion, String> {
+/// nombra, y `pasos` la carpeta de la biblioteca de pasos. Los errores llevan el número de
+/// línea delante.
+pub fn leer(texto: &str, dir: &std::path::Path, pasos: &std::path::Path) -> Result<Guion, String> {
     let mut g = Guion::default();
     for (i, crudo) in texto.lines().enumerate() {
         let n = i + 1;
@@ -171,6 +172,10 @@ pub fn leer(texto: &str, dir: &std::path::Path) -> Result<Guion, String> {
         let t = p[0]
             .strip_prefix('@')
             .ok_or_else(|| err("una orden empieza con @<tiempo>".into()))?;
+        if p.get(1) == Some(&"paso") {
+            expandir_paso(&mut g, n, t, &p[2..], pasos).map_err(err)?;
+            continue;
+        }
         let t = g.instante(t).map_err(err)?;
         let orden = leer_orden(&g, &p[1..]).map_err(err)?;
         g.lineas.push(Linea { n, t, orden });
@@ -179,6 +184,101 @@ pub fn leer(texto: &str, dir: &std::path::Path) -> Result<Guion, String> {
         return Err("0: falta `@<tiempo> fin`: el clip necesita un final explícito".into());
     }
     Ok(g)
+}
+
+/// `@<pulso> paso <nombre> [veces N]`: las órdenes de `pasos/<nombre>.paso` desde ese pulso,
+/// N veces seguidas. Un paso es un trozo de guion en pulsos relativos con su duración:
+///
+/// ```text
+/// dura 4
+/// @0 patas mecer_izq en 1
+/// @1 patas mecer_der en 1
+/// @3 patas de_pie en 1
+/// ```
+///
+/// Va en pulsos (necesita `pulso` o `musica`); un paso dentro de otro no se admite.
+fn expandir_paso(
+    g: &mut Guion,
+    n: usize,
+    t: &str,
+    p: &[&str],
+    dir: &std::path::Path,
+) -> Result<(), String> {
+    let nombre = p.first().ok_or("paso <nombre> [veces N]")?;
+    let veces: u32 = match p.iter().position(|w| *w == "veces") {
+        Some(i) => p
+            .get(i + 1)
+            .and_then(|x| x.parse().ok())
+            .ok_or("veces <n>: n entero")?,
+        None => 1,
+    };
+    if g.pulso.is_none() || t.ends_with('s') {
+        return Err("un paso va en pulsos: el guion necesita `pulso` o `musica` y el paso empieza en un pulso".into());
+    }
+    let inicio: f64 = t.parse().map_err(|_| format!("«{t}» no es un pulso"))?;
+    let f = dir.join(format!("{nombre}.paso"));
+    let texto = std::fs::read_to_string(&f).map_err(|_| {
+        let hay: Vec<String> = std::fs::read_dir(dir)
+            .map(|d| {
+                d.filter_map(|e| {
+                    e.ok()?
+                        .path()
+                        .file_stem()
+                        .map(|s| s.to_string_lossy().to_string())
+                })
+                .collect()
+            })
+            .unwrap_or_default();
+        format!(
+            "paso «{nombre}» no existe en {}; hay: {}",
+            dir.display(),
+            hay.join(", ")
+        )
+    })?;
+    let mut dura = None;
+    let mut lineas = Vec::new();
+    for (k, crudo) in texto.lines().enumerate() {
+        let l = crudo.split('#').next().unwrap().trim();
+        if l.is_empty() {
+            continue;
+        }
+        let w: Vec<&str> = l.split_whitespace().collect();
+        if w[0] == "dura" {
+            dura = w.get(1).and_then(|x| x.parse::<f64>().ok());
+            continue;
+        }
+        let off: f64 = w[0]
+            .strip_prefix('@')
+            .and_then(|x| x.parse().ok())
+            .ok_or(format!(
+                "{nombre}.paso:{}: una orden empieza con @<pulso relativo>",
+                k + 1
+            ))?;
+        if w.get(1) == Some(&"paso") {
+            return Err(format!(
+                "{nombre}.paso:{}: un paso no puede llamar a otro",
+                k + 1
+            ));
+        }
+        lineas.push((
+            k + 1,
+            off,
+            w[1..].iter().map(|x| x.to_string()).collect::<Vec<_>>(),
+        ));
+    }
+    let dura = dura.ok_or(format!("{nombre}.paso: falta `dura <pulsos>`"))?;
+    for r in 0..veces {
+        for (k, off, w) in &lineas {
+            let w: Vec<&str> = w.iter().map(String::as_str).collect();
+            let tt = g.instante(&format!("{}", inicio + r as f64 * dura + off))?;
+            let orden = leer_orden(g, &w).map_err(|e| format!("{nombre}.paso:{k}: {e}"))?;
+            if matches!(orden, Orden::Fin) {
+                return Err(format!("{nombre}.paso:{k}: un paso no lleva `fin`"));
+            }
+            g.lineas.push(Linea { n, t: tt, orden });
+        }
+    }
+    Ok(())
 }
 
 fn leer_orden(g: &Guion, p: &[&str]) -> Result<Orden, String> {
@@ -416,6 +516,7 @@ mod pruebas {
         let g = leer(
             "pulso 120\n@2 cara a\n@1.5s cara b\n@3 fin\n",
             std::path::Path::new("."),
+            std::path::Path::new("."),
         )
         .unwrap();
         assert_eq!(g.lineas[0].t, 1.0); // 2 pulsos a 120 bpm
@@ -424,7 +525,12 @@ mod pruebas {
 
     #[test]
     fn sin_fin_es_un_error() {
-        assert!(leer("@0 cara a\n", std::path::Path::new(".")).is_err());
+        assert!(leer(
+            "@0 cara a\n",
+            std::path::Path::new("."),
+            std::path::Path::new(".")
+        )
+        .is_err());
     }
 
     #[test]
@@ -437,9 +543,20 @@ mod pruebas {
             r#"{"bpm": 100, "pulsos": [0.5, 1.0, 1.5], "compases": [0.5]}"#,
         )
         .unwrap();
-        let g = leer("musica p.json\n@1.5 cara a\n@3 fin\n", &dir).unwrap();
+        let g = leer("musica p.json\n@1.5 cara a\n@3 fin\n", &dir, &dir).unwrap();
         assert!((g.lineas[0].t - 0.75).abs() < 1e-9); // entre el pulso 1 (0.5) y el 2 (1.0), desde 0.5
         assert!((g.lineas[1].t - (1.0 + 0.6)).abs() < 1e-9); // pasado el último, al tempo medio
+    }
+
+    #[test]
+    fn un_paso_se_repite_desde_su_pulso() {
+        let dir = std::env::temp_dir().join(format!("coreo-paso-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("p.paso"), "dura 4\n@0 cara a\n@2 cara b\n").unwrap();
+        let g = leer("pulso 60\n@1 paso p veces 2\n@10 fin\n", &dir, &dir).unwrap();
+        let t: Vec<f64> = g.lineas.iter().map(|l| l.t).collect();
+        assert_eq!(t, vec![1.0, 3.0, 5.0, 7.0, 10.0]); // 60 bpm: pulso = segundo
+        assert!(leer("pulso 60\n@1 paso nada\n@10 fin\n", &dir, &dir).is_err());
     }
 
     #[test]

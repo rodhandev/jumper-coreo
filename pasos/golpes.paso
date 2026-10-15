@@ -1,0 +1,4 @@
+# Golpes de tenaza al pulso, para música rápida.
+dura 4
+@0 cara jugueton
+@0 alternar tenazas golpe_arriba reposo veces 8 cada 0.5

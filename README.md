@@ -63,6 +63,8 @@ python scripts/train.py --task jumper.coreo               # learn it
 | `puente/equilibrar.py` | automatic balance (IK of the four legs while a claw is up) |
 | `puente/clip_a_npz.py` | base pose from Jumper's resting-floor solver (`tools/import_wbc_gestures.py`), writes the training `.npz` |
 | `puente/ver_clip.py` | kinematic preview video, face screen following the script |
+| `puente/esqueleto.py` | fast preview on the CPU: flat outlines of each part, claws coloured by screen side (`construir.py --esqueleto`) |
+| `puente/factible.py` | can the real robot do it: joint speed, arm torque against the servo's measured curve, lag, self-contact, clearance to the phone |
 | `puente/compatibilidad.py` | which claw posture goes with which leg stance without tipping over |
 | `puente/exportar_robot.py`, `extraer_posturas.py` | regenerate `robot.json` and `posturas/base.toml` from Jumper |
 

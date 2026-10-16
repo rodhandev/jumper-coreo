@@ -1,10 +1,14 @@
-# «Toca el violín»: la tenaza izquierda arriba hace de violín y la derecha de arco; se mece despacio.
+# «Toca el violín» (Rodhan, 15-oct): la tenaza izquierda del robot (a la DERECHA de la pantalla) sube desde abajo
+# y apunta abajo a la derecha, al cuadrante 4, como el mástil; la derecha hace de arco y lo frota en perpendicular
+# con golpes lentos, de pulso en pulso, mientras el violín ondea despacio y el cuerpo se mece.
 dura 8
-@0 cara ternura
-@0 tenaza_izq arriba en 1
+@0 cara musica
+@0 tenaza_izq violin en 1.5
 @0 patas mecer_izq en 2
-@1 alternar tenaza_der arco_a arco_b veces 5 cada 1
+@1 tenaza_der arco_baja en 1
+@2 alternar tenaza_der arco_sube arco_baja veces 4 cada 1
+@2 alternar tenaza_izq violin_b violin veces 2 cada 2
 @4 patas mecer_der en 2
 @6 tenaza_der reposo en 1     # el arco vuelve antes: las dos a la vez se cruzan
-@7 tenaza_izq reposo en 1
+@6.5 tenaza_izq reposo en 1.5
 @7 patas de_pie en 1

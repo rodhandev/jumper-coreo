@@ -141,22 +141,6 @@ RF_J2_joint = 0.6109
 RF_J3_joint = 1.2431
 RF_J4_joint = 0.5468
 
-# crear_postura: punta de la tenaza izquierda en [175, 18, 65] mm
-[tenaza.arco_a]
-J0 = -0.8274
-J1 = -2.3053
-J2 = -0.7285
-J3 = -1.1864
-J4 = 0.0000
-
-# crear_postura: punta de la tenaza izquierda en [160, 28, 100] mm
-[tenaza.arco_b]
-J0 = -1.0358
-J1 = -2.6286
-J2 = -0.7316
-J3 = -1.0497
-J4 = 0.0000
-
 # crear_postura: punta de la tenaza izquierda en [215, 52, 25] mm
 [tenaza.besito]
 J0 = -0.7029
@@ -180,3 +164,35 @@ J1 = -2.2826
 J2 = -0.3504
 J3 = -0.7998
 J4 = -0.6000
+
+# crear_postura: punta de la tenaza izquierda en [215, 158, -40] mm, apuntando a [0.2, 0.8, -0.55] (31 deg de desvío)
+[tenaza.violin]
+J0 = -1.1454
+J1 = 0.2876
+J2 = 0.7259
+J3 = -1.3442
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [215, 153, -22] mm, apuntando a [0.2, 0.8, -0.5] (37 deg de desvío)
+[tenaza.violin_b]
+J0 = -0.9796
+J1 = -2.6270
+J2 = -1.0328
+J3 = 1.2749
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [218, -45, -22] mm, apuntando a [0.4, -0.9, 0.0] (10 deg de desvío)
+[tenaza.arco_baja]
+J0 = -1.7615
+J1 = -4.4939
+J2 = -0.1846
+J3 = 0.8792
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [205, -78, 12] mm, apuntando a [0.4, -0.9, 0.0] (16 deg de desvío)
+[tenaza.arco_sube]
+J0 = -1.8675
+J1 = -2.0769
+J2 = -0.4397
+J3 = -0.3228
+J4 = 0.0000

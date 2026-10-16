@@ -2,7 +2,7 @@
 
 The shell's own mesh does not do: joined to the display module it is not closed (CGAL refuses it), and 19 000
 faces make the cut slow. What the cradle needs is the surface it sits on, so this raycasts the shell from above
-on a 2 mm grid over the cradle's footprint and closes it down to z = 20 mm: a height field, closed by
+on a 2 mm grid over the footprint of both holders and closes it down to z = 20 mm: a height field, closed by
 construction. base_link frame, millimetres, robot at its model pose.
 
     python caparazon.py <jumper checkout> [caparazon.stl]
@@ -16,7 +16,7 @@ import numpy as np
 
 repo = Path(sys.argv[1])
 dest = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(__file__).resolve().parent / "caparazon.stl"
-X, Y, STEP, FLOOR = (-50.0, 30.0), (-80.0, 80.0), 2.0, 20.0
+X, Y, STEP, FLOOR = (-94.0, 62.0), (-62.0, 62.0), 2.0, 20.0
 
 m = mujoco.MjModel.from_xml_path(str(repo / "assets/jumper/jumper.xml"))
 d = mujoco.MjData(m)

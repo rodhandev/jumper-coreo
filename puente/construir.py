@@ -5,7 +5,9 @@
 
     python construir.py <jumper checkout> <guion> [--dest <dir>] [--sin-desvio] [--sin-equilibrio]
                         [--modelo <xml>] [--caras <dir>] [--musica <pista>] [--sin-video]
-                        [--tam 1080x1920] [--camara DIST,AZIMUT,ELEVACION]
+                        [--tam 1080x1920] [--camara DIST,AZIMUT,ELEVACION] [--esqueleto]
+
+`--esqueleto` previews with esqueleto.py (flat outlines, CPU) instead of ver_clip's render: for checking a move.
 
 Run from the jumper checkout's venv. Every step is the script of the same name in this
 directory, run as is; a step that refuses (a posture that does not exist, a joint too
@@ -65,13 +67,14 @@ def main() -> None:
     print("[3] clip_a_npz")
     run(py, HERE / "clip_a_npz.py", repo, clip, dest / f"{name}.npz")
     if "--sin-video" not in sys.argv:
-        print("[4] ver_clip")
+        esqueleto = "--esqueleto" in sys.argv
+        print("[4] esqueleto" if esqueleto else "[4] ver_clip")
         model = arg("--modelo", repo / "assets" / "jumper" / "jumper.xml")
         extra = ["--guion", clip]
-        extra += ["--caras", arg("--caras")] if arg("--caras") else []
+        extra += ["--caras", arg("--caras")] if arg("--caras") and not esqueleto else []
         extra += ["--musica", arg("--musica")] if arg("--musica") else []
         extra += [x for k in ("--tam", "--camara") if arg(k) for x in (k, arg(k))]
-        run(py, HERE / "ver_clip.py", repo, dest / f"{name}.npz", model, dest / f"{name}.mp4", *extra)
+        run(py, HERE / ("esqueleto.py" if esqueleto else "ver_clip.py"), repo, dest / f"{name}.npz", model, dest / f"{name}.mp4", *extra)
     print(f"listo: {dest / (name + '.npz')}")
 
 

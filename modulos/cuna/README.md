@@ -1,48 +1,45 @@
-# Phone cradle for Jumper
+# Phone holders for Jumper
 
-A printable cradle that turns Jumper into a desk phone stand that still dances. The phone sits in landscape
-behind the visor, leaning back 30°, so the eyes stay in view and it rises only ~65 mm.
+Two holders that turn Jumper into a desk companion carrying your phone, and the phone itself, so the robot can be
+trained and filmed with its real mass on. They are showpieces: one piece each, no magnet, latch or spring, curved to
+blend into the shell, and printable.
 
-- **Holds:** a MagSafe ring (N52, 56 × 46 × 1.5 mm, in a 1.6 mm recess) and a lip that takes the weight. For a
-  phone without MagSafe, stick a MagSafe-compatible ring on it.
-- **Releases:** press the tab behind the plate. The printed spring tongue inside the ring pushes the phone 3 mm off
-  the magnet, and the phone lifts out diagonally. No springs or screws.
-- **Mounts:** the underside is cut from the shell's own surface, so it sits flush. Stick it on with two strips of
-  VHB tape; there are no holes in the robot.
-- **USB-C:** the plate is 130 mm wide and the phone 160, so both short ends, where the port is, stay free for a
-  cable.
+| Version | The phone | Good for |
+|---|---|---|
+| `vertical` | stands in portrait right behind the visor, leaning back 6°, in a sleeve whose front opens in one curve and whose base flows onto the shell | the screen faces you: notifications, a video call, the agent's replies |
+| `plana` | lies in portrait along the shell, screen up, held at its four corners by curved hooks on a bed shaped to the shell | the lowest centre of mass and nothing for a claw to reach: walking and jumping |
+
+The phone (`telefono.scad`) has the size and mass of today's common 6.1" phones: 147.6 × 71.6 × 7.8 mm, 172 g,
+rounded outline, a camera pill and a three-lens block, no brand.
 
 | File | What it is |
 |---|---|
-| `cuna.scad` | The design (OpenSCAD + [BOSL2](https://github.com/BelfrySCAD/BOSL2), BSD-2-Clause), in Jumper's `base_link` frame, mm |
-| `cuna.stl` | Built from it: 64.6 cm³, one closed piece |
-| `caparazon.py` | Writes `caparazon.stl`, the shell's top under the cradle, from a jumper checkout |
-| `montar.py` | Adds the cradle and a 200 g phone to a Jumper MJCF, with their masses, for training and video |
-| `construir.sh` | Fetches BOSL2 at a fixed commit and rebuilds everything |
+| `cuna-vertical.scad`, `cuna-plana.scad` | the holders (OpenSCAD + [BOSL2](https://github.com/BelfrySCAD/BOSL2), BSD-2-Clause), in Jumper's `base_link` frame, mm; each also places the phone (`-D parte=…`) |
+| `telefono.scad` | the phone, one part per colour |
+| `stl/<version>-<part>.stl` | built from them: `cuna` (one closed piece), `cuerpo`, `pantalla`, `isla`, `camara` |
+| `caparazon.py` | writes `caparazon.stl`, the shell's top under both holders, from a jumper checkout |
+| `montar.py` | adds a holder and the phone to a Jumper MJCF, with their masses, for training and video |
+| `construir.sh` | fetches BOSL2 at a fixed commit and rebuilds everything |
 
 ```sh
 bash construir.sh <jumper checkout>
-python montar.py <jumper>/assets/jumper/jumper.xml jumper-cuna.xml
+python montar.py <jumper>/assets/jumper/jumper.xml jumper-telefono.xml --version vertical   # or plana
 ```
 
 ## Checked in simulation (15 Oct 2026)
 
-- **Mass:** cradle 68 g (PLA; its 3–4 mm walls print almost solid) + ring ~15 g + phone 200 g = **283 g**. The robot
-  goes from 2.54 to 2.83 kg.
-- **The claws clear it:** the trained romantic dance, the wave, a sketch dance and the stock `demo` dance were run
-  kinematically with the cradle and phone on; no leg or claw comes within 10 mm.
-- **The dance survives it untrained:** the romantic policy, trained without the phone, played with it on tracks its
-  joints at 0.025 rad RMS (0.023 without) and tilts at most 9.4° (8.1° without), with no falls.
-- **The magnet has margin:** over that run the phone accelerates at most 1.8 m/s². It always presses on the plate
-  (0.67–1.47 N) and never lifts off the lip; the largest force the magnet must hold is 0.19 N sideways, against
-  ~4 N of friction. Jumping would need more (see below).
+- **Mass:** holder 48 g (`vertical`, 46 cm³) or 63 g (`plana`, 60 cm³) as PLA, plus the 172 g phone. The robot goes
+  from 2.54 to 2.76 or 2.78 kg.
+- **The claws clear them** (`puente/factible.py`, robot posed at every row of the romantic dance, the mix-up dance,
+  the wave and the stock `demo` dance): with `vertical` no leg comes within 30 mm of the holder or the phone; with
+  `plana` the closest is a palm at 12 mm, while it scratches its head.
 
-Not checked yet: a real print, fit on a physical shell, and the tongue's spring force.
+Not checked yet: the trained dances with these holders on (the policy was trained with the earlier cradle and the
+earlier violin; it has to be trained again before the final video).
 
 ## Design notes
 
-Before drawing we looked for an existing design: gravity holders (they open when the robot bounces), printed-spring
-clamps, push-push latches (the heart-cam is in an expired patent, US6056333), MagSafe mounts, and two holders we were
-sent: a rack-and-gear self-closing stand and an under-desk tray with a printed trigger. None had a licence that lets us
-share a derivative, so this is drawn from scratch. The tongue takes the idea of the under-desk tray's trigger, and the
-rack-and-gear stand's self-centring arms are the plan for a version for jumps.
+Before drawing we looked for existing designs (gravity holders, printed-spring clamps, push-push latches, MagSafe
+mounts, and two holders we were sent). None had a licence that lets us share a derivative, so these are drawn from
+scratch. An earlier version had a MagSafe ring and a printed release tongue; it was dropped for these, which only
+need to hold the phone on the robot (15 Oct).

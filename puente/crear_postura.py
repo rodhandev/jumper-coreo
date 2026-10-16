@@ -2,6 +2,7 @@
 
     python crear_postura.py <jumper> patas  <nombre> [--dx mm] [--dy mm] [--dz mm] [--roll deg] [--pitch deg] [--yaw deg]
     python crear_postura.py <jumper> tenaza <nombre> --punta X Y Z [--desde <postura>] [--pinza RAD]
+                                         [--apunta DX DY DZ]
                                          (mm, base frame; the LEFT claw, coreo mirrors it)
 
 `patas`: the body moved by (dx, dy, dz) and turned by roll/pitch/yaw over feet that stay where they stand at
@@ -11,6 +12,8 @@ point (J0..J3). `--pinza` opens the pincer: J4 of the left claw, 0 closed (HOME)
 known pose is found from that pose, where random starts can land in another fold of the arm. Reference points at HOME, base frame, mm: claw tips (187, +-73, -98),
 the top of the shell z = 72 at x -112..94, the face screen x 66..91, z 32..65.
 
+`--apunta` also aims the claw: the arm has one joint more than a point needs, so of the solves that reach the
+tip it keeps the one whose palm-to-tip axis is closest to (DX, DY, DZ), base frame (e.g. 0 1 -1: out and down).
 Refuses (writes nothing) when the IK misses by more than 1 mm, or when the posed claw touches the body.
 Writes or replaces `[familia.nombre]` in coreo/posturas/propias.toml.
 """
@@ -136,6 +139,19 @@ def main() -> None:
             row = q.copy()
             row[idx] = [rng.uniform(*R.range[i]) for i in idx]
             starts.append(row)
+        apunta = np.array(opt("--apunta", 3)) if "--apunta" in sys.argv else None
+        palma = mj.mj_name2id(m, mj.mjtObj.mjOBJ_BODY, "LF_palm_link")
+
+        def desvio(row):
+            """Degrees between the claw's palm-to-tip axis and --apunta."""
+            d.qpos[:] = 0.0
+            d.qpos[3] = 1.0
+            d.qpos[R.q_adr] = row
+            mj.mj_kinematics(m, d)
+            eje = d.site_xpos[site("LF")] - d.xpos[palma]
+            c = eje @ apunta / (np.linalg.norm(eje) * np.linalg.norm(apunta))
+            return float(np.degrees(np.arccos(np.clip(c, -1, 1))))
+
         best = None
         chocan = 0
         for row in starts:
@@ -143,15 +159,19 @@ def main() -> None:
             if err <= REACH and touches(row):
                 chocan += 1
                 continue
-            if best is None or err < best[1]:
-                best = (row, err)
-        row, err = best
+            # without --apunta, the closest solve; with it, of those that reach, the best aimed
+            key = (err > REACH, desvio(row) if apunta is not None and err <= REACH else 0.0, err)
+            if best is None or key < best[2]:
+                best = (row, err, key)
+        row, err, _ = best
         if "--pinza" in sys.argv:
             j4 = R.names.index("LF_J4_joint")
             row[j4] = float(np.clip(opt("--pinza"), *R.range[j4]))
         values = {f"J{j}": row[R.names.index(f'LF_J{j}_joint')] for j in range(5)}
         cabecera = f"tenaza.{nombre}"
         nota = f"crear_postura: punta de la tenaza izquierda en {np.round(punta * 1000).astype(int).tolist()} mm"
+        if apunta is not None:
+            nota += f", apuntando a {apunta.tolist()} ({desvio(row):.0f} deg de desvío)"
     else:
         raise SystemExit("familia: patas | tenaza")
 

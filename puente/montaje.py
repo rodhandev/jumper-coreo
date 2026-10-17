@@ -16,7 +16,8 @@ plan.json:
      "cara": {"": [[t, "sonrisa"], ...], "r2_": [...]},
      "telefono": [[t, "musica"], ...], "camara": [[t, "dist,azim,elev,height,dx,dy"], ...],
      "centro": "" | "r2_" | "medio",           # whom the camera's look-at point follows
-     "sonidos": [[t, "celebracion"], ...], "rotulos": [[texto, a, b], ...], "musica": [[t, pista, desde_s]]}
+     "sonidos": [[t, "celebracion"], ...], "rotulos": [[texto, a, b], ...], "musica": [[t, pista, desde_s]],
+     "disparos": [[t, "", "r2_", true], ...]}   # the app's virtual shots: shooter, target, hit (exportar_blender)
 
 The first robot's model is the scene (the desk phone comes with it, montar.py --version mesa); the others join it.
 Writes <out>/modelo.xml, <out>/montaje.npz (qpos per frame, dt, robots' base names) and <out>/guion.json
@@ -114,7 +115,8 @@ for r in robots:
 
 np.savez(out / "montaje.npz", qpos=qpos, dt=np.array(1.0 / fps),
          prefijos=np.array([r["prefijo"] for r in robots]))
-guion = {k: plan.get(k) for k in ("telefono", "camara", "sonidos", "rotulos", "musica", "centro") if plan.get(k)}
+guion = {k: plan.get(k) for k in ("telefono", "camara", "sonidos", "rotulos", "musica", "centro", "disparos")
+         if plan.get(k)}
 guion["caras"] = plan.get("cara", {})
 guion["caras_dir"] = {r["prefijo"]: str(ruta(r["caras"])) for r in robots if r.get("caras")}
 (out / "guion.json").write_text(json.dumps(guion, indent=1, ensure_ascii=False))

@@ -91,7 +91,7 @@ for j, g in enumerate(escena["geoms"]):
     # MuJoCo's rgba are display (sRGB) values; Blender's colours are linear
     rgba = tuple([c ** 2.2 for c in g["rgba"][:3]] + [g["rgba"][3]])
     rough = 0.3 if g["rgba"][0] > 0.6 else 0.5
-    if g["geom"].startswith(("display_module", "tof_sensor", "camera_link")):
+    if any(k in g["geom"] for k in ("display_module", "tof_sensor", "camera_link")):
         rough = 0.12   # the visor is glossy black glass: crisp reflections, not a milky sheen
     im = g.get("imagen")
     ob.data.materials.clear()
@@ -117,6 +117,50 @@ else:
     sc.frame_set(frame)
 
 
+# ── the app's virtual shots (exportar_blender.py rayos.npy): a glowing beam per shot, the shooter's colour, and a
+# flash where it hits; drawn only while the export says it is visible
+camino_r = exp / "rayos.npy"
+if camino_r.exists() and escena.get("disparos"):
+    rayos = np.load(camino_r)
+    for j, disparo in enumerate(escena["disparos"]):
+        col = (0.0, 0.76, 0.89, 1) if disparo[1] == "" else (1.0, 0.37, 0.64, 1)
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.004, depth=1.0, vertices=12)
+        haz = bpy.context.active_object
+        haz.name = f"rayo{j}"
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.025, segments=16, ring_count=8)
+        chispa = bpy.context.active_object
+        chispa.name = f"impacto{j}"
+        for ob, fuerza in ((haz, 40.0), (chispa, 60.0)):
+            mat = bpy.data.materials.new(ob.name)
+            mat.use_nodes = True
+            pr = mat.node_tree.nodes["Principled BSDF"]
+            pr.inputs["Base Color"].default_value = col
+            pr.inputs["Emission Color"].default_value = col
+            pr.inputs["Emission Strength"].default_value = fuerza
+            ob.data.materials.append(mat)
+            ob.rotation_mode = "QUATERNION"
+
+        def poner_rayo(i, haz=haz, chispa=chispa, j=j):
+            x0, y0, z0, x1, y1, z1, vis, imp = rayos[i, j]
+            a, b = Vector((x0, y0, z0)), Vector((x1, y1, z1))
+            haz.hide_render = haz.hide_viewport = not vis or (b - a).length < 1e-4
+            if not haz.hide_render:
+                haz.location = (a + b) / 2
+                haz.rotation_quaternion = (b - a).to_track_quat("Z", "Y")
+                haz.scale = (1, 1, (b - a).length)
+            chispa.hide_render = chispa.hide_viewport = not imp
+            chispa.location = b
+
+        if frame is None:
+            for i in range(len(rayos)):
+                poner_rayo(i)
+                for ob in (haz, chispa):
+                    for prop in ("location", "rotation_quaternion", "scale", "hide_render", "hide_viewport"):
+                        if prop.startswith("hide") or ob is haz or prop == "location":
+                            ob.keyframe_insert(prop, frame=i + 1)
+        else:
+            poner_rayo(frame - 1)
+
 # ── the set ───────────────────────────────────────────────────────────────────────────────────────────────────
 def importar(nombre, pos, rot_z=0.0, escala=1.0, apoyo=0.0, rot_x=0.0):
     """A Poly Haven glTF, its lowest point on z = apoyo, at pos (x, y), turned rot_z degrees (rot_x first: 90 lays
@@ -129,7 +173,7 @@ def importar(nombre, pos, rot_z=0.0, escala=1.0, apoyo=0.0, rot_x=0.0):
     for o in nuevos:
         if o.parent is None:
             o.parent = raiz
-    raiz.scale = (escala,) * 3
+    raiz.scale = tuple(escala) if isinstance(escala, (tuple, list)) else (escala,) * 3
     raiz.rotation_euler = (math.radians(rot_x), 0, math.radians(rot_z))
     bpy.context.view_layer.update()
     pts = [o.matrix_world @ Vector(c) for o in nuevos if o.type == "MESH" for c in o.bound_box]
@@ -140,18 +184,19 @@ def importar(nombre, pos, rot_z=0.0, escala=1.0, apoyo=0.0, rot_x=0.0):
 
 
 # the table: its top at z = 0, under the robot
-mesa, pts = importar("WoodenTable_01", (0, 0), escala=1.0, apoyo=0.0)
+# Its long side (1.8 m) across the frame, so two robots side by side stand on it (17-oct: the second Jumper stood
+# off a 0.66 m-deep table); made 1.6x deeper (1.05 m) for the phone in front and the props behind, along the grain.
+mesa, pts = importar("WoodenTable_01", (0, 0), rot_z=90, escala=(1.6, 1.0, 1.0), apoyo=0.0)
 top = max(p.z for p in pts)
 mesa.location.z -= top
-cx = sum(p.x for p in pts) / len(pts)
-cy = sum(p.y for p in pts) / len(pts)
-mesa.location.x -= cx + 0.15   # the robot a little in front of the table's centre, towards the camera
-mesa.location.y -= cy
+xs, ys = [p.x for p in pts], [p.y for p in pts]
+mesa.location.x += 0.47 - max(xs)                  # the front edge 47 cm in front of the robot: room for the phone
+mesa.location.y += -0.29 - (min(ys) + max(ys)) / 2   # centred between the two robots' places (y 0 and -0.58)
 # props behind and beside it, as on a real desk; the robot faces +x, the camera looks from +x
 # (a laptop was tried first: open, it filled half the background as a pale block)
 importar("desk_lamp_arm_01", (-0.42, 0.30), rot_z=-60)
 importar("potted_plant_04", (-0.40, -0.30))
-importar("book_encyclopedia_set_01", (-0.62, 0.02), rot_z=90)
+importar("book_encyclopedia_set_01", (-0.50, 0.02), rot_z=90)
 importar("alarm_clock_01", (-0.18, 0.40), rot_z=200)
 # music on the desk (17-oct): a ukulele laid down, a cassette walkman; and the pens of a working desk
 importar("Ukulele_01", (-0.33, -0.12), rot_z=35, rot_x=90)

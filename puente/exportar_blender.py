@@ -16,6 +16,7 @@ Writes into <out dir>:
     poses.npy              [frame, geom, 7]: position (3) and quaternion w x y z (4), world frame
     camara.npy             [frame, 7]: the camera's eye (3), look-at point (3) and distance, from --camara and the
                            guion's `camara` orders (puente/camara.py), as ver_clip.py moves it
+    rayos.npy              [frame, shot, 8]: the app's virtual shots (guion `disparos`), start, end, visible, impact
     ojo_der/, ojo_izq/, pantalla/   one PNG per frame (only when the guion asks for faces / phone states)
 """
 
@@ -39,11 +40,20 @@ from tasks.jumper.common.dance.motion import LEG_JOINTS  # noqa: E402
 z = np.load(clip)
 dt = float(z["dt"])
 names = [n for leg in sorted(LEG_JOINTS) for n in LEG_JOINTS[leg]]
-q = np.stack([z[k] for k in dances._keys()], axis=1).astype(np.float64)
 m = mujoco.MjModel.from_xml_path(str(xml))
 d = mujoco.MjData(m)
-free = m.jnt_qposadr[next(j for j in range(m.njnt) if m.jnt_type[j] == 0)]
-adr = [m.jnt_qposadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, n)] for n in names]
+# a clip (one robot) or a montage (montaje.py: qpos per frame, its own model, robots by name prefix)
+MONTAJE = "qpos" in z.files
+if MONTAJE:
+    qp = z["qpos"]
+    n_rows = len(qp)
+    frees = {p: m.jnt_qposadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, p + "floating_base")]
+             for p in z["prefijos"]}
+else:
+    q = np.stack([z[k] for k in dances._keys()], axis=1).astype(np.float64)
+    n_rows = len(q)
+    free = m.jnt_qposadr[next(j for j in range(m.njnt) if m.jnt_type[j] == 0)]
+    adr = [m.jnt_qposadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, n)] for n in names]
 (out / "mallas").mkdir(parents=True, exist_ok=True)
 
 # ── the meshes, once ─────────────────────────────────────────────────────────────────────────────────────────
@@ -73,22 +83,29 @@ for g in range(m.ngeom):
         entry["caja"] = [float(v) for v in m.geom_size[g]]   # half sizes
     else:
         continue
-    if name in ("ojo_der", "ojo_izq", "telefono_pantalla"):
+    if name.endswith(("ojo_der", "ojo_izq")) or name == "telefono_pantalla":
         entry["imagen"] = {"telefono_pantalla": "pantalla"}.get(name, name)
     geoms.append((g, entry))
 
 # ── where every geom is, every frame ─────────────────────────────────────────────────────────────────────────
 t0 = float(arg("--desde", 0.0))
-t1 = min(float(arg("--hasta", len(q) * dt)), len(q) * dt)
+t1 = min(float(arg("--hasta", n_rows * dt)), n_rows * dt)
 times = np.arange(t0, t1, 1.0 / fps)
-rows = np.minimum(np.round(times / dt).astype(int), len(q) - 1)
+rows = np.minimum(np.round(times / dt).astype(int), n_rows - 1)
 poses = np.zeros((len(rows), len(geoms), 7), np.float32)
+centros = np.zeros((len(rows), 2))
 for i, k in enumerate(rows):
-    x, y, zz, roll, pitch, yaw = (float(z[f"body_{a}"][k]) for a in dances.AXES)
-    quat = np.zeros(4)
-    mujoco.mju_euler2Quat(quat, [roll, pitch, yaw], "xyz")
-    d.qpos[free:free + 7] = (x, y, zz, *quat)
-    d.qpos[adr] = q[k]
+    if MONTAJE:
+        d.qpos[:] = qp[k]
+        c = guion.get("centro", "")
+        centros[i] = np.mean([qp[k, f:f + 2] for p, f in frees.items() if c in ("medio", p)], axis=0)
+    else:
+        x, y, zz, roll, pitch, yaw = (float(z[f"body_{a}"][k]) for a in dances.AXES)
+        quat = np.zeros(4)
+        mujoco.mju_euler2Quat(quat, [roll, pitch, yaw], "xyz")
+        d.qpos[free:free + 7] = (x, y, zz, *quat)
+        d.qpos[adr] = q[k]
+        centros[i] = (x, y)
     mujoco.mj_kinematics(m, d)
     for j, (g, _) in enumerate(geoms):
         qg = np.zeros(4)
@@ -103,11 +120,37 @@ BASE = camara_base(arg("--camara") or "1.00,176,-32")
 cams = np.zeros((len(rows), 7), np.float32)
 for i, (t, k) in enumerate(zip(times, rows)):
     dist, azim, elev, alto, dx, dy = camara_en(t, BASE, guion.get("camara", []))
-    look = np.array([z["body_x"][k] + dx, z["body_y"][k] + dy, alto])
+    look = np.array([centros[i, 0] + dx, centros[i, 1] + dy, alto])
     el, az = np.radians(elev), np.radians(azim)
     fwd = np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)])
     cams[i] = [*(look - dist * fwd), *look, dist]
 np.save(out / "camara.npy", cams)
+
+# ── the app's virtual shots (montage guion `disparos`: [t, shooter prefix, target prefix, hit]) ─────────────────
+# a beam from the shooter's aiming claw to the target's body, 0.12 s in flight and 0.10 s held; a miss flies past
+VUELO, QUEDA = 0.12, 0.10
+disparos = guion.get("disparos", [])
+NB = max(1, len(disparos))                            # one beam per shot
+rayos = np.zeros((len(rows), NB, 8), np.float32)     # x0 y0 z0 x1 y1 z1 visible impact
+if disparos:
+    for i, k in enumerate(rows):
+        t = times[i]
+        if MONTAJE:
+            d.qpos[:] = qp[k]
+            mujoco.mj_kinematics(m, d)
+        for j, (ts, quien, blanco, acierta) in enumerate(disparos[:]):
+            u = t - ts
+            if not 0 <= u <= VUELO + QUEDA:
+                continue
+            slot = j
+            a = d.xpos[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, quien + "LF_finger_tip_link")].copy()
+            bz = d.xpos[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, blanco + "base_link")] + [0, 0, 0.03]
+            if not acierta:   # past the target, 15 cm to its side
+                lado = np.cross(bz - a, [0, 0, 1])
+                bz = bz + 0.15 * lado / (np.linalg.norm(lado) + 1e-9) + 0.5 * (bz - a)
+            f = min(u / VUELO, 1.0)
+            rayos[i, slot] = [*a, *(a + (bz - a) * f), 1.0, float(acierta and u >= VUELO)]
+np.save(out / "rayos.npy", rayos)
 
 
 def at(orders, t):
@@ -117,23 +160,30 @@ def at(orders, t):
 
 # ── the pictures, frame by frame ─────────────────────────────────────────────────────────────────────────────
 imagenes = {}
-if caras is not None and guion.get("cara"):
-    sys.path.insert(0, str(Path(xml).resolve().parent))
+# faces per robot: a clip's guion has `cara` (and --caras); a montage's has `caras` and `caras_dir` by prefix
+por_robot = guion.get("caras") or ({"": guion["cara"]} if guion.get("cara") else {})
+dirs = {p: Path(v) for p, v in guion.get("caras_dir", {}).items()}
+if caras is not None:
+    dirs.setdefault("", caras)
+for p, ordenes in por_robot.items():
+    if not ordenes or p not in dirs:
+        continue
+    sys.path.insert(0, str(dirs[p].resolve().parent))   # recolorear.py lives beside the faces' folder
     from recolorear import eye_crops  # noqa: E402
 
     for lado in ("ojo_der", "ojo_izq"):
-        shutil.rmtree(out / lado, ignore_errors=True)
-        (out / lado).mkdir()
+        shutil.rmtree(out / (p + lado), ignore_errors=True)
+        (out / (p + lado)).mkdir()
     cache = {}
     for i, t in enumerate(times):
-        _, e = at(guion["cara"], t)
-        e = e or guion["cara"][0][1]
+        _, e = at(ordenes, t)
+        e = e or ordenes[0][1]
         if e not in cache:
-            cache[e] = eye_crops((caras / f"{e}.png").resolve(), caras.resolve() / ".ojos")
+            cache[e] = eye_crops((dirs[p] / f"{e}.png").resolve(), dirs[p].resolve() / ".ojos")
         der, izq = cache[e]
-        shutil.copyfile(der, out / "ojo_der" / f"{i + 1:04d}.png")
-        shutil.copyfile(izq, out / "ojo_izq" / f"{i + 1:04d}.png")
-    imagenes.update({"ojo_der": "ojo_der", "ojo_izq": "ojo_izq"})
+        shutil.copyfile(der, out / (p + "ojo_der") / f"{i + 1:04d}.png")
+        shutil.copyfile(izq, out / (p + "ojo_izq") / f"{i + 1:04d}.png")
+    imagenes.update({p + "ojo_der": p + "ojo_der", p + "ojo_izq": p + "ojo_izq"})
 if guion.get("telefono"):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "modulos" / "cuna"))
     from pantallas import imagen  # noqa: E402
@@ -149,5 +199,6 @@ if guion.get("telefono"):
     "fps": fps, "frames": len(rows), "desde": t0, "clip": str(clip.resolve()),
     "geoms": [e for _, e in geoms], "imagenes": imagenes,
     "musica_desfase": guion.get("musica_desfase"),
+    "disparos": disparos,
 }, indent=1))
 print(f"{out}: {len(geoms)} parts, {len(rows)} frames at {fps} fps, pictures: {', '.join(imagenes) or 'none'}")

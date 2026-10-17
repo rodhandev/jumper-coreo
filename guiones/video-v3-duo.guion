@@ -1,0 +1,11 @@
+# video-v3-duo.guion — un solo clip para entrenar dos momentos del vídeo 3 (17-oct): contestar la llamada (pulsos
+# 1-7) y el piano del dúo (pulsos 17-37, los mismos de la balada en que el violín suena: el montaje los toma de aquí).
+# Uno solo: una política en vez de dos, ~4 h de GPU menos.
+musica /media/rodri/Rodri4sci/jumper-workspace/salidas/musica/jumper-romantico-1.pulsos.json
+@0  cara atencion
+@1  paso contestar
+@17 cara musica
+@17 paso piano
+@25 paso piano
+@33 paso mecerse
+@37 fin

@@ -67,6 +67,7 @@ python scripts/train.py --task jumper.coreo               # learn it
 | `puente/factible.py` | can the real robot do it: joint speed, arm torque against the servo's measured curve, lag, self-contact, clearance to the phone |
 | `puente/golpe.py` | the other end of a stroke (strum, key, drum hit): a tip move from a posture with the arm in the same fold, so the stroke stays short |
 | `puente/exportar_blender.py`, `blender/escena.py` | the clip to Blender (meshes, poses, eye and phone pictures per frame) and the desk set that films it |
+| `puente/saltos.py` | what jumps the robot can do, simulated against the servo's curve: height, distance, turn, flight, ground force |
 | `puente/instrumento.py` | which instrument is playing, second by second (YAMNet), and which step plays along; `coreo bailar --instrumentos` uses it |
 | `puente/sonido_movimiento.py` | the clip's own movement sound: servo whir by speed, feet landing, pincer clicks, air on fast moves, the body settling |
 | `puente/compatibilidad.py` | which claw posture goes with which leg stance without tipping over |

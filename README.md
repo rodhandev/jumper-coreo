@@ -66,6 +66,7 @@ python scripts/train.py --task jumper.coreo               # learn it
 | `puente/esqueleto.py` | fast preview on the CPU: flat outlines of each part, claws coloured by screen side (`construir.py --esqueleto`) |
 | `puente/factible.py` | can the real robot do it: joint speed, arm torque against the servo's measured curve, lag, self-contact, clearance to the phone |
 | `puente/golpe.py` | the other end of a stroke (strum, key, drum hit): a tip move from a posture with the arm in the same fold, so the stroke stays short |
+| `puente/exportar_blender.py`, `blender/escena.py` | the clip to Blender (meshes, poses, eye and phone pictures per frame) and the desk set that films it |
 | `puente/instrumento.py` | which instrument is playing, second by second (YAMNet), and which step plays along; `coreo bailar --instrumentos` uses it |
 | `puente/sonido_movimiento.py` | the clip's own movement sound: servo whir by speed, feet landing, pincer clicks, air on fast moves, the body settling |
 | `puente/compatibilidad.py` | which claw posture goes with which leg stance without tipping over |
@@ -96,6 +97,22 @@ coreo bailar track.pulsos.json --estilo romantico --instrumentos tramos.json -o 
 Every instrument step is checked with `puente/factible.py`: within the servo's curve, no claw into the other or
 the body, the body tilted at most 7°. Both front claws are also feet, so the side-reaching gestures (harp,
 maracas) play one claw at a time.
+
+## Filming on a desk
+
+The published video is filmed in Blender, on a desk built from [Poly Haven](https://polyhaven.com) assets (CC0, no
+attribution needed, free to hand on): the HDRI `poly_haven_studio` (a room with a window and a desk) and the glTF
+models `WoodenTable_01`, `desk_lamp_arm_01`, `potted_plant_04`, `book_encyclopedia_set_01`, `alarm_clock_01`.
+MuJoCo stays the source of the motion; Blender lights and films it.
+
+```sh
+python puente/exportar_blender.py <jumper> clip.npz model.xml export/ --guion clip.json --caras <faces dir>
+blender -b -P blender/escena.py -- export/ <assets dir> still.png --frame 1             # one still
+blender -b -P blender/escena.py -- export/ <assets dir> frames/ --gpu                   # the whole clip
+#   --telefono-mesa X,Y,GIRO[,INCLINACION]: the phone on the desk beside the robot instead of in a holder
+```
+
+Fetch the assets with Poly Haven's API (`https://api.polyhaven.com/files/<id>`: the 2k `.exr`, the 1k glTF).
 
 ## Español
 

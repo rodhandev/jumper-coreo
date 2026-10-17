@@ -146,16 +146,39 @@ mod pruebas {
     fn toca_el_instrumento_que_suena_y_si_no_sigue_el_estilo() {
         let dir = std::env::temp_dir().join(format!("coreo-bailar-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("estilos.toml"), "[e]\ncara = \"sonrisa\"\npasos = [\"mecerse\"]\n").unwrap();
+        std::fs::write(
+            dir.join("estilos.toml"),
+            "[e]\ncara = \"sonrisa\"\npasos = [\"mecerse\"]\n",
+        )
+        .unwrap();
         for p in ["mecerse", "violin"] {
             std::fs::write(dir.join(format!("{p}.paso")), "dura 4\n").unwrap();
         }
         let pulsos: Vec<f64> = (0..40).map(|i| i as f64 * 0.5).collect();
-        std::fs::write(dir.join("p.json"), serde_json::json!({ "pulsos": pulsos }).to_string()).unwrap();
+        std::fs::write(
+            dir.join("p.json"),
+            serde_json::json!({ "pulsos": pulsos }).to_string(),
+        )
+        .unwrap();
         // violín de 0 a 5 s (pulsos 0-9, a medio segundo), nada reconocido después
-        std::fs::write(dir.join("t.json"), r#"{"tramos": [[0, 5, "violin", 0.3], [5, 20, "mecerse", 0]]}"#).unwrap();
-        let g = bailar(&dir.join("p.json"), "e", None, 0, &dir, Some(&dir.join("t.json"))).unwrap();
-        assert!(g.contains("@1 paso violin\n@5 paso violin\n@9 paso violin\n@13 paso mecerse\n"), "{g}");
+        std::fs::write(
+            dir.join("t.json"),
+            r#"{"tramos": [[0, 5, "violin", 0.3], [5, 20, "mecerse", 0]]}"#,
+        )
+        .unwrap();
+        let g = bailar(
+            &dir.join("p.json"),
+            "e",
+            None,
+            0,
+            &dir,
+            Some(&dir.join("t.json")),
+        )
+        .unwrap();
+        assert!(
+            g.contains("@1 paso violin\n@5 paso violin\n@9 paso violin\n@13 paso mecerse\n"),
+            "{g}"
+        );
         let sin = bailar(&dir.join("p.json"), "e", None, 0, &dir, None).unwrap();
         assert!(!sin.contains("violin"));
         std::fs::remove_dir_all(&dir).ok();

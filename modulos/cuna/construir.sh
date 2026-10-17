@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Build both holders and their phone: BOSL2 at a fixed commit, the shell's top from the jumper checkout, OpenSCAD,
-# binary STL. Writes stl/<version>-<part>.stl for version vertical|plana, part cuna|cuerpo|pantalla|isla|camara.
+# binary STL. Writes stl/<version>-<part>.stl for version vertical|plana, part cuna|cuerpo|pantalla|isla|camara,
+# and stl/suelto-<part>.stl, the phone alone.
 #   bash construir.sh <jumper checkout>      (from a Python env with mujoco and trimesh)
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -16,6 +17,10 @@ for v in vertical plana; do
   for p in cuna cuerpo pantalla isla camara; do
     OPENSCADPATH="$PWD/vendor" openscad -D "parte=\"$p\"" -o "stl/$v-$p.stl" "cuna-$v.scad" 2>&1 | grep -iE "warn|error" && exit 1 || true
   done
+done
+# the phone on its own, lying on a table beside the robot (blender/escena.py --telefono-mesa)
+for p in cuerpo pantalla isla camara; do
+  OPENSCADPATH="$PWD/vendor" openscad -D "parte=\"$p\"" -o "stl/suelto-$p.stl" telefono-suelto.scad 2>&1 | grep -iE "warn|error" && exit 1 || true
 done
 # OpenSCAD writes ASCII STL; MuJoCo reads binary. The holder must be one closed piece.
 python - <<'EOF'

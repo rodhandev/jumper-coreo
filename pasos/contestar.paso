@@ -1,0 +1,7 @@
+# «Contesta el teléfono» (la llamada en el teléfono de al lado): atención, señala el teléfono con la tenaza
+# izquierda (a la derecha de la pantalla, donde está el teléfono), le da dos toques para contestar y vuelve.
+dura 4
+@0 cara atencion
+@0 tenaza_izq senalar en 1.5
+@1.5 alternar tenaza_izq tocar senalar veces 2 cada 0.5
+@2.5 tenaza_izq reposo en 1.5

@@ -16,10 +16,11 @@ pub const SR: u32 = 48_000;
 /// Un evento de la frase: gorjeo (f0 -> f1 Hz), chasquido de tenaza, o trino (f Hz con vibrato).
 #[derive(Clone, Copy)]
 enum Ev {
-    Gorjeo(f32, f32, f32), // f0, f1, duración s
-    Tenaza(f32),           // brillo 0–1
-    Trino(f32, f32),       // f, duración s
-    Silencio(f32),         // s
+    Gorjeo(f32, f32, f32),  // f0, f1, duración s
+    Tenaza(f32),            // brillo 0–1
+    Trino(f32, f32),        // f, duración s
+    Campana(f32, f32, f32), // trino golpeado que se apaga: f, duración s, caída s
+    Silencio(f32),          // s
 }
 use Ev::*;
 
@@ -137,13 +138,13 @@ const TABLA: &[(&str, &[Ev])] = &[
         ],
     ),
     (
+        // Rodhan, 16-oct: de la familia A (jumper_timbre.py), la subida con cola de campana «le da un toque
+        // robótico»; es la principal y las demás salen a veces (VARIANTES).
         "celebracion",
         &[
-            Tenaza(0.8),
-            Tenaza(0.8),
             Gorjeo(900., 1350., 0.07),
             Gorjeo(1350., 1800., 0.07),
-            Trino(1800., 0.25),
+            Campana(1800., 0.6, 0.35),
         ],
     ),
     (
@@ -259,6 +260,44 @@ const TABLA: &[(&str, &[Ev])] = &[
     ),
 ];
 
+/// Otras versiones de una categoría, con su peso: el montaje elige una al azar (con semilla) cada vez que suena,
+/// para que la misma emoción no suene idéntica diez veces. La principal (TABLA) se lleva lo que sobra hasta 1.
+/// Rodhan, 16-oct: «a4 le da un toque robótico, aunque también podrían usarse las otras en menor medida».
+const VARIANTES: &[(&str, f32, &[Ev])] = &[
+    // la celebración original: dos chasquidos, subida y trino
+    (
+        "celebracion",
+        0.14,
+        &[
+            Tenaza(0.8),
+            Tenaza(0.8),
+            Gorjeo(900., 1350., 0.07),
+            Gorjeo(1350., 1800., 0.07),
+            Trino(1800., 0.25),
+        ],
+    ),
+    // sin chasquidos
+    (
+        "celebracion",
+        0.13,
+        &[
+            Gorjeo(900., 1350., 0.07),
+            Gorjeo(1350., 1800., 0.07),
+            Trino(1800., 0.25),
+        ],
+    ),
+    // cinco semitonos más grave
+    (
+        "celebracion",
+        0.13,
+        &[
+            Gorjeo(674.2, 1011.4, 0.08),
+            Gorjeo(1011.4, 1348.5, 0.08),
+            Trino(1348.5, 0.32),
+        ],
+    ),
+];
+
 struct Azar(u64);
 impl Azar {
     fn ruido(&mut self) -> f32 {
@@ -296,6 +335,24 @@ fn tono(out: &mut Vec<f32>, f0: f32, f1: f32, d: f32, vib: f32) {
     }
 }
 
+/// El trino de `tono`, pero golpeado y apagándose como una campanilla: seno con 2.º y 3.er armónicos suaves,
+/// ataque de 4 ms y caída exponencial de `caida` s.
+fn campana(out: &mut Vec<f32>, f: f32, d: f32, caida: f32) {
+    let tau = std::f32::consts::TAU;
+    let n = (d * SR as f32) as usize;
+    let mut fase = 0.0f32;
+    for i in 0..n {
+        let t = i as f32 / SR as f32;
+        fase += tau * f * (1.0 + 0.08 * (tau * 28.0 * t).sin()) / SR as f32;
+        let a = (-t / caida).exp() * (t / 0.004).min(1.0);
+        out.push(
+            0.5 * (fase.sin() + 0.18 * (2.0 * fase).sin() + 0.06 * (3.0 * fase).sin())
+                * a
+                * env(i, n, 0.01),
+        );
+    }
+}
+
 fn render(ev: &[Ev], semilla: u64) -> Vec<f32> {
     let mut az = Azar(semilla | 1);
     let mut out = Vec::new();
@@ -304,6 +361,7 @@ fn render(ev: &[Ev], semilla: u64) -> Vec<f32> {
         match *e {
             Gorjeo(f0, f1, d) => tono(&mut out, f0, f1, d, 0.0),
             Trino(f, d) => tono(&mut out, f, f, d, 0.08),
+            Campana(f, d, caida) => campana(&mut out, f, d, caida),
             Tenaza(brillo) => {
                 // chasquido: ruido con caída de 18 ms + ping resonante a 2,2–3,4 kHz
                 let n = (0.045 * SR as f32) as usize;
@@ -366,7 +424,24 @@ pub fn generar(dir: &Path) -> Result<Vec<(String, f64)>, String> {
         let f = archivo(cat);
         wav(&dir.join(&f), &x).map_err(|e| format!("{f}: {e}"))?;
         let dur = x.len() as f64 / SR as f64;
-        dic.insert(cat.to_string(), serde_json::json!([{ "clip": f, "dur": (dur * 100.0).round() / 100.0, "generado": true }]));
+        let otras: Vec<_> = VARIANTES.iter().filter(|(c, _, _)| c == cat).collect();
+        let resto = 1.0 - otras.iter().map(|(_, p, _)| p).sum::<f32>();
+        let mut lista = vec![
+            serde_json::json!({ "clip": f, "dur": (dur * 100.0).round() / 100.0, "generado": true,
+                                                 "preferido": true, "peso": (resto as f64 * 100.0).round() / 100.0 }),
+        ];
+        for (k, (_, peso, ev)) in otras.iter().enumerate() {
+            let x = render(
+                ev,
+                0x9E37_79B9_7F4A_7C15 ^ (i as u64 + 1) ^ ((k as u64 + 2) << 32),
+            );
+            let f = archivo(&format!("{cat}_{}", k + 2));
+            wav(&dir.join(&f), &x).map_err(|e| format!("{f}: {e}"))?;
+            let dur = x.len() as f64 / SR as f64;
+            lista.push(serde_json::json!({ "clip": f, "dur": (dur * 100.0).round() / 100.0, "generado": true,
+                                           "preferido": false, "peso": (*peso as f64 * 100.0).round() / 100.0 }));
+        }
+        dic.insert(cat.to_string(), serde_json::Value::Array(lista));
         hechos.push((cat.to_string(), dur));
     }
     let doc = serde_json::json!({
@@ -395,6 +470,28 @@ mod pruebas {
             assert!((0.70..=0.71).contains(&pico), "{cat}: pico {pico}");
             assert!(x.len() > SR as usize / 20, "{cat}: dura menos de 50 ms");
         }
+    }
+
+    #[test]
+    fn las_variantes_suenan_y_sus_pesos_dejan_sitio_a_la_principal() {
+        for (cat, peso, ev) in VARIANTES {
+            assert!(
+                TABLA.iter().any(|(c, _)| c == cat),
+                "{cat}: variante sin categoría principal"
+            );
+            let x = render(ev, 1);
+            let pico = x.iter().fold(0.0f32, |m, v| m.max(v.abs()));
+            assert!(
+                (0.70..=0.71).contains(&pico) && *peso > 0.0,
+                "{cat}: pico {pico}"
+            );
+        }
+        let celebra: f32 = VARIANTES
+            .iter()
+            .filter(|(c, _, _)| *c == "celebracion")
+            .map(|(_, p, _)| p)
+            .sum();
+        assert!(celebra < 0.5, "la principal debe ser la más frecuente");
     }
 
     #[test]

@@ -542,7 +542,12 @@ mod pruebas {
         )
         .unwrap();
         assert!(matches!(&g.lineas[0].orden, Orden::Telefono(e) if e == "musica"));
-        assert!(leer("@0 telefono\n@1 fin\n", std::path::Path::new("."), std::path::Path::new(".")).is_err());
+        assert!(leer(
+            "@0 telefono\n@1 fin\n",
+            std::path::Path::new("."),
+            std::path::Path::new(".")
+        )
+        .is_err());
     }
 
     #[test]

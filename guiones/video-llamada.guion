@@ -1,0 +1,12 @@
+# video-llamada.guion — propuesta (17-oct): «Mom» llama mientras Jumper está en el escritorio; la contesta tocando
+# el teléfono, que está a su lado, y la saluda en la videollamada. Utilidad diaria: el 40 % del jurado experto.
+pulso 100
+@0 telefono llamada
+@0 cara atencion
+@0 sonido atencion
+@1 paso contestar
+@3 telefono videollamada              # el segundo toque: contestada
+@3 cara sonrisa
+@3 sonido saludo
+@5 paso saludo
+@13 fin

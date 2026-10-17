@@ -1,7 +1,13 @@
 # «Contesta el teléfono» (la llamada en el teléfono de al lado): atención, señala el teléfono con la tenaza
-# izquierda (a la derecha de la pantalla, donde está el teléfono), le da dos toques para contestar y vuelve.
-dura 4
+# izquierda (a la derecha de la pantalla, donde está el teléfono) con dos golpecitos en el aire, y saluda con la
+# misma tenaza a quien llama, dos veces, antes de volver. Corto (Rodhan, 17-oct): 6 pulsos.
+# No toca la pantalla: Jumper contesta por Bluetooth, y el teléfono queda fuera del alcance de los bailes
+# (factible.py --telefono-mesa 0.345,0.09,90,12: a 25 mm en este paso, a 12 mm en el baile romántico).
+dura 6
 @0 cara atencion
-@0 tenaza_izq senalar en 1.5
-@1.5 alternar tenaza_izq tocar senalar veces 2 cada 0.5
-@2.5 tenaza_izq reposo en 1.5
+@0 tenaza_izq senalar en 1
+@1 alternar tenaza_izq tocar senalar veces 2 cada 0.5
+@2 cara sonrisa
+@2 tenaza_izq arriba en 1
+@3 alternar tenaza_izq arriba_b arriba veces 2 cada 0.5
+@4 tenaza_izq reposo en 1.5

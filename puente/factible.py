@@ -15,8 +15,13 @@ The legs are not judged here: they stand on the floor, and inverse dynamics with
 nothing about them -- the trained policy is their test. Exit 1 when something is over a limit.
 
     python factible.py <jumper checkout> <clip.npz> [--modelo <xml>] [--lag 0.10]
+                       [--telefono-mesa X,Y,GIRO[,INCLINACION]]
+
+`--telefono-mesa` (the same numbers as blender/escena.py) puts the phone on the table beside the robot, and its
+stand when it leans, and checks every row with the robot where the clip has it: no part into them, and how close.
 """
 
+import math
 import sys
 from pathlib import Path
 
@@ -38,7 +43,33 @@ dt = float(z["dt"])
 names = [n for leg in sorted(LEG_JOINTS) for n in LEG_JOINTS[leg]]
 q = np.stack([z[k] for k in dances._keys()], axis=1).astype(np.float64)
 base = np.stack([z[f"body_{a}"] for a in dances.AXES], axis=1).astype(np.float64)
-m = mujoco.MjModel.from_xml_path(str(xml))
+spec = mujoco.MjSpec.from_file(str(xml))
+obstaculos = []
+if arg("--telefono-mesa"):
+    tx, ty, giro, *inc = (float(v) for v in arg("--telefono-mesa").split(","))
+    inc = math.radians(inc[0]) if inc else 0.0
+    gz, z0 = math.radians(giro), 0.0027 + (0.0738 * math.sin(inc) if inc else 0.0)
+    # the phone: origin at the centre of its back, X across, Y along (top +y), Z out of the screen;
+    # turned INCLINACION about x (top up), then GIRO about z, as escena.py does
+    Rz = np.array([[math.cos(gz), -math.sin(gz), 0], [math.sin(gz), math.cos(gz), 0], [0, 0, 1]])
+    R = Rz @ np.array([[1, 0, 0], [0, math.cos(inc), -math.sin(inc)], [0, math.sin(inc), math.cos(inc)]])
+    origen = np.array([tx, ty, z0])
+    cajas = [("telefono", origen + R @ [0, 0, 0.0039], [0.0358, 0.0738, 0.0039], R)]
+    if inc > 0:   # the stand: under the back from the bottom end to a little past the middle, down to the table
+        y0, y1 = -0.072, 0.030
+        alto = z0 + y1 * math.sin(inc)
+        c = origen + R @ [0, (y0 + y1) / 2, 0]
+        cajas.append(("soporte", np.array([c[0], c[1], alto / 2]), [0.03, (y1 - y0) * math.cos(inc) / 2, alto / 2], Rz))
+    for nombre, pos, half, rot in cajas:
+        g = spec.worldbody.add_geom(type=mujoco.mjtGeom.mjGEOM_BOX, size=half, pos=pos.tolist())
+        g.name = f"obst_{nombre}"
+        quat = np.zeros(4)
+        mujoco.mju_mat2Quat(quat, np.asarray(rot, float).reshape(-1))
+        g.quat = quat.tolist()
+        g.contype = g.conaffinity = 1
+        g.margin = 0.03
+        obstaculos.append(f"obst_{nombre}")
+m = spec.compile()
 d = mujoco.MjData(m)
 free = next(j for j in range(m.njnt) if m.jnt_type[j] == 0)
 qa, va = m.jnt_qposadr[free], m.jnt_dofadr[free]
@@ -127,5 +158,27 @@ else:
 if carga:
     near = sorted(cerca.items(), key=lambda e: e[1])[:3]
     print("closest to the holder/phone: " + (", ".join(f"{n} {1000 * v:.0f} mm" for n, v in near) if near else "nothing within 30 mm"))
+if obstaculos:
+    ids = [mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, n) for n in obstaculos]
+    cerca_o, dentro = {}, {}
+    for k in range(len(q)):   # the robot where the clip has it, not in the air
+        d.qpos[:] = 0
+        d.qpos[qa:qa + 7] = pos[k]
+        d.qpos[adr] = q[k]
+        mujoco.mj_forward(m, d)
+        for c in d.contact[:d.ncon]:
+            if (c.geom1 in ids) != (c.geom2 in ids):
+                otro = c.geom2 if c.geom1 in ids else c.geom1
+                o = m.geom(c.geom1 if c.geom1 in ids else c.geom2).name
+                b = mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_BODY, m.geom_bodyid[otro])
+                cerca_o[(o, b)] = min(cerca_o.get((o, b), 1.0), c.dist)
+                if c.dist < -0.001:
+                    dentro.setdefault((o, b), []).append(k * dt)
+    near = sorted(cerca_o.items(), key=lambda e: e[1])[:3]
+    print("closest to the phone on the table: " + (", ".join(f"{b} {1000 * v:.0f} mm from {o[5:]}" for (o, b), v in near)
+                                                  if near else "nothing within 30 mm"))
+    for (o, b), ts in sorted(dentro.items()):
+        over = True
+        print(f"{b} into the {o[5:]}: {len(ts)} rows, {ts[0]:.2f}-{ts[-1]:.2f} s  <-- over")
 print("OK: within the servo's limits" if not over else "NOT OK: see the marked lines")
 sys.exit(1 if over else 0)

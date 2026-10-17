@@ -7,12 +7,15 @@ kinematic clip --; Blender only lights and films it.
 
     python exportar_blender.py <jumper checkout> <clip.npz> <model.xml> <out dir> [--guion <clip.json>]
                                [--caras <dir de PNG>] [--fps 30] [--desde s] [--hasta s]
+                               [--camara DIST,AZIM,ELEV[,HEIGHT[,DX,DY]]]
 
 Writes into <out dir>:
     mallas/<geom>.obj      each visible geom (group 2) once, in its own frame, metres (texture coordinates for
                            the phone's screen); boxes (the eyes) as their size
     escena.json            per geom: mesh, colour, which picture it shows; fps, frames
     poses.npy              [frame, geom, 7]: position (3) and quaternion w x y z (4), world frame
+    camara.npy             [frame, 7]: the camera's eye (3), look-at point (3) and distance, from --camara and the
+                           guion's `camara` orders (puente/camara.py), as ver_clip.py moves it
     ojo_der/, ojo_izq/, pantalla/   one PNG per frame (only when the guion asks for faces / phone states)
 """
 
@@ -58,8 +61,8 @@ for g in range(m.ngeom):
         f = m.mesh_face[fa:fa + fn] + 1
         lines = [f"v {a:.6f} {b:.6f} {c:.6f}" for a, b, c in v]
         ta, tn = m.mesh_texcoordadr[k], m.mesh_texcoordnum[k]
-        if tn > 0:   # MuJoCo keeps texture coordinates per face corner (mesh_facetexcoord)
-            lines += [f"vt {a:.6f} {b:.6f}" for a, b in m.mesh_texcoord[ta:ta + tn]]
+        if tn > 0:   # MuJoCo keeps texture coordinates per face corner (mesh_facetexcoord), v flipped on load
+            lines += [f"vt {a:.6f} {1 - b:.6f}" for a, b in m.mesh_texcoord[ta:ta + tn]]
             ft = m.mesh_facetexcoord[fa:fa + fn] + 1
             lines += [f"f {a}/{x} {b}/{y} {c}/{w}" for (a, b, c), (x, y, w) in zip(f, ft)]
         else:
@@ -93,6 +96,18 @@ for i, k in enumerate(rows):
         poses[i, j, :3] = d.geom_xpos[g]
         poses[i, j, 3:] = qg
 np.save(out / "poses.npy", poses)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from camara import base as camara_base, camara_en  # noqa: E402
+
+BASE = camara_base(arg("--camara") or "1.00,176,-32")
+cams = np.zeros((len(rows), 7), np.float32)
+for i, (t, k) in enumerate(zip(times, rows)):
+    dist, azim, elev, alto, dx, dy = camara_en(t, BASE, guion.get("camara", []))
+    look = np.array([z["body_x"][k] + dx, z["body_y"][k] + dy, alto])
+    el, az = np.radians(elev), np.radians(azim)
+    fwd = np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)])
+    cams[i] = [*(look - dist * fwd), *look, dist]
+np.save(out / "camara.npy", cams)
 
 
 def at(orders, t):

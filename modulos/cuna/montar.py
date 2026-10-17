@@ -1,6 +1,7 @@
 """Put a phone holder and its phone on a Jumper MJCF, with their masses, for training and for video.
 
     python montar.py <in.xml> <out.xml> [--version vertical|plana] [--sin-telefono]
+    python montar.py <in.xml> <out.xml> --version mesa --telefono-mesa X,Y,GIRO[,INCLINACION]
 
 The STLs (construir.sh) are already in base_link's frame, the phone placed in its holder, so every geom goes in a
 body `cuna_link` at base_link's origin, colliding with the legs and claws: a dance whose claw would hit the phone
@@ -57,6 +58,66 @@ def pantalla_uv(stl, dst: Path) -> Path:
     return obj
 
 
+def mesa(src: Path, dst: Path, donde: str) -> None:
+    """The phone on the table beside the robot (Rodhan, 17-oct), as part of the set: a fixed body in the world, so
+    ver_clip, esqueleto, factible and exportar_blender all see the same phone. X, Y in metres (world), GIRO and
+    INCLINACION in degrees, as blender/escena.py takes them: turned INCLINACION about its own x (top end up), then
+    GIRO about z, its bottom end on the table. Leaning, it gets a plain desk stand under its back. It collides: a
+    dance that would run into it shows in factible.py and, trained with it, the policy learns to keep clear."""
+    import math
+
+    import numpy as np
+    import trimesh
+
+    tx, ty, giro, *inc = (float(v) for v in donde.split(","))
+    inc = inc[0] if inc else 0.0
+    text = src.read_text()
+    if 'meshdir="./"' in text:
+        text = text.replace('meshdir="./"', f'meshdir="{src.parent.resolve()}/"', 1)
+    stl = lambda p: (HERE / "stl" / f"suelto-{p}.stl").resolve()  # noqa: E731
+    files = {p: stl(p) for p in PARTES}
+    files["pantalla"] = pantalla_uv(stl, dst)
+    assets = "".join(f'<mesh name="mesa_{p}" file="{f}" scale="0.001 0.001 0.001"/>' for p, f in files.items())
+    png = dst.with_name(f"{dst.stem}-pantalla.png").resolve()
+    assets += (f'<texture name="pantalla" type="2d" file="{png}"/>'
+               '<material name="pantalla" texture="pantalla" emission="0.85" specular="0.4" shininess="0.8"/>')
+    geoms = ""
+    for p, (rgba, collides) in PARTES.items():
+        look = 'material="pantalla"' if p == "pantalla" else f'rgba="{rgba}"'
+        extra = 'contype="1" conaffinity="1"' if collides else 'contype="0" conaffinity="0"'
+        geoms += f'<geom name="telefono_{p}" type="mesh" mesh="mesa_{p}" {look} {extra} group="2"/>'
+    if inc > 0:   # the stand: a wedge from the table to the phone's back, in the phone's frame (mm)
+        # built where it stands (phone's bottom end on the table), then brought into the phone's frame
+        a = math.radians(inc)
+        R = np.array([[1, 0, 0], [0, math.cos(a), -math.sin(a)], [0, math.sin(a), math.cos(a)]])
+        z0 = 2.7 + 73.8 * math.sin(a)
+        back = [R @ np.array([x, y, 0.0]) + [0, 0, z0] for x in (-30, 30) for y in (-72, 30)]
+        drop = [np.array([b[0], b[1], 0.0]) for b in back[1::2]]
+        world = np.array(back + drop)                       # 4 on the back, 2 on the table under the high edge
+        local = (R.T @ (world - [0, 0, z0]).T).T
+        cuña = trimesh.convex.convex_hull(local)
+        f = dst.with_name(f"{dst.stem}-soporte.stl").resolve()
+        cuña.export(f)
+        assets += f'<mesh name="mesa_soporte" file="{f}" scale="0.001 0.001 0.001"/>'
+        geoms += ('<geom name="soporte_mesa" type="mesh" mesh="mesa_soporte" rgba="0.85 0.86 0.87 1" '
+                  'contype="1" conaffinity="1" group="2"/>')
+    text = text.replace("<asset>", "<asset>" + assets, 1)
+    g, a = math.radians(giro), math.radians(inc)
+    Rz = np.array([[math.cos(g), -math.sin(g), 0], [math.sin(g), math.cos(g), 0], [0, 0, 1]])
+    Rx = np.array([[1, 0, 0], [0, math.cos(a), -math.sin(a)], [0, math.sin(a), math.cos(a)]])
+    import mujoco
+
+    quat = np.zeros(4)
+    mujoco.mju_mat2Quat(quat, (Rz @ Rx).reshape(-1))
+    pos = (tx, ty, 0.0027 + 0.0738 * math.sin(a))
+    body = (f'<body name="telefono_mesa" pos="{pos[0]:.4f} {pos[1]:.4f} {pos[2]:.4f}" '
+            f'quat="{quat[0]:.6f} {quat[1]:.6f} {quat[2]:.6f} {quat[3]:.6f}">{geoms}</body>')
+    anchor = re.search(r"<worldbody>", text)
+    text = text[:anchor.end()] + body + text[anchor.end():]
+    dst.write_text(text)
+    print(f"wrote {dst}: phone on the table at {donde}" + (" on a stand" if inc > 0 else ""))
+
+
 def main(src: Path, dst: Path, version: str, phone: bool) -> None:
     import trimesh
 
@@ -92,6 +153,11 @@ def main(src: Path, dst: Path, version: str, phone: bool) -> None:
 
 if __name__ == "__main__":
     v = sys.argv[sys.argv.index("--version") + 1] if "--version" in sys.argv else "vertical"
-    if v not in ("vertical", "plana"):
-        raise SystemExit("--version vertical | plana")
-    main(Path(sys.argv[1]), Path(sys.argv[2]), v, "--sin-telefono" not in sys.argv)
+    if v == "mesa":
+        if "--telefono-mesa" not in sys.argv:
+            raise SystemExit("--version mesa needs --telefono-mesa X,Y,GIRO[,INCLINACION]")
+        mesa(Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[sys.argv.index("--telefono-mesa") + 1])
+    elif v in ("vertical", "plana"):
+        main(Path(sys.argv[1]), Path(sys.argv[2]), v, "--sin-telefono" not in sys.argv)
+    else:
+        raise SystemExit("--version vertical | plana | mesa")

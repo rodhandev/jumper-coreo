@@ -349,18 +349,18 @@ J2 = -0.6016
 J3 = 1.4125
 J4 = 0.0000
 
-# crear_postura: punta de la tenaza izquierda en [235, 75, -45] mm, apuntando a [0.8, 0.15, -0.5] (3 deg de desvío)
+# crear_postura: punta de la tenaza izquierda en [265, 75, -45] mm, apuntando a [0.8, 0.15, -0.5] (18 deg de desvío)
 [tenaza.senalar]
-J0 = -1.4465
-J1 = -2.9184
-J2 = -0.8456
-J3 = 1.3079
+J0 = -1.5986
+J1 = 0.2257
+J2 = 0.0502
+J3 = -0.4115
 J4 = 0.0000
 
-# golpe.py: desde senalar, la punta [0, 0, -18] mm (error 1.3 mm)
+# golpe.py: desde senalar, la punta [0, 0, -18] mm (error 2.3 mm)
 [tenaza.tocar]
-J0 = -1.4783
-J1 = -2.8461
-J2 = -0.6241
-J3 = 1.1934
+J0 = -1.5762
+J1 = 0.0348
+J2 = -0.1459
+J3 = -0.2581
 J4 = 0.0000

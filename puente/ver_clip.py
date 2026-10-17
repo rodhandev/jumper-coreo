@@ -13,7 +13,7 @@ expression, named as the guion names it. With `--musica` (and `--guion`, for the
 clip's `musica_desfase`) the track is laid under the video from the clip's first beat. With a model that
 carries the phone (modulos/cuna/montar.py) and a guion with `telefono` orders, the phone's screen shows each
 state as it moves (modulos/cuna/pantallas.py), redrawn every frame. A guion's `camara` orders
-([t, "dist,azim,elev[,height]"]) move the camera there smoothly, e.g. closer when the phone shows something.
+([t, "dist,azim,elev[,height[,dx,dy]]"], puente/camara.py) move the camera there smoothly, e.g. closer when the phone shows something.
 """
 
 import json
@@ -80,7 +80,10 @@ model.vis.global_.offwidth, model.vis.global_.offheight = W, H
 r = mujoco.Renderer(model, H, W)
 cam = mujoco.MjvCamera()
 # --camara DIST,AZIMUT,ELEVACION (m, grados): 160 o 180 de azimut mira a la cara; 135 de tres cuartos.
-BASE = [float(v) for v in (arg("--camara") or "0.75,135,-18").split(",")] + [0.08]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from camara import base as camara_base, camara_en  # noqa: E402
+
+BASE = camara_base(arg("--camara") or "0.75,135,-18")
 audio = ["-ss", f"{desfase:.3f}", "-i", musica, "-shortest", "-c:a", "aac"] if musica else []
 ff = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
                        "-s", f"{W}x{H}", "-r", str(fps), "-i", "-", *audio, "-pix_fmt", "yuv420p", str(dest)],
@@ -116,20 +119,6 @@ def pantalla(t):
     mujoco.mjr_uploadTexture(model, r._mjr_context, tex)
 
 
-def camara_en(t, base, ordenes, paso=0.6):
-    """The camera at time t: the guion's `camara` orders ([t, "dist,azim,elev[,height]"]) each glide there over
-    `paso` s (smoothstep) from where the camera was; before the first, `base`. Height is the look-at point's z (m)."""
-    cur = list(base)
-    for te, v in ordenes:
-        if te > t:
-            break
-        goal = [float(x) for x in v.split(",")]
-        goal += cur[len(goal):]
-        u = min(max((t - te) / paso, 0.0), 1.0)
-        u = u * u * (3 - 2 * u)
-        cur = [a + (b - a) * u for a, b in zip(cur, goal)]
-    return cur
-
 
 def face_at(t):
     now = [e for te, e in ordenes if te <= t + 1e-9]
@@ -152,8 +141,8 @@ for k in rows:
             model.geom_matid[g] = mid(p + e)
     if telefono and tex >= 0:
         pantalla(k * dt)
-    cam.distance, cam.azimuth, cam.elevation, alto = camara_en(k * dt, BASE[:4], guion.get("camara", []))
-    cam.lookat[:] = (x, y, alto)
+    cam.distance, cam.azimuth, cam.elevation, alto, dx, dy = camara_en(k * dt, BASE, guion.get("camara", []))
+    cam.lookat[:] = (x + dx, y + dy, alto)
     r.update_scene(data, cam)
     ff.stdin.write(r.render().tobytes())
 ff.stdin.close()

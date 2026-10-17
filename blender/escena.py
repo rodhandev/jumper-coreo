@@ -4,9 +4,11 @@
                                [--muestras 64] [--tam 1080x1920] [--escala 100] [--camara DIST,AZIM,ELEV,ALTO]
                                [--gpu] [--blend escena.blend]
 
+The camera follows the export's camara.npy (the guion's `camara` orders), unless --camara fixes it.
+
 <assets dir> holds what Poly Haven gives under CC0 (https://polyhaven.com/license): the HDRI
 poly_haven_studio_2k.exr and the glTF folders WoodenTable_01, desk_lamp_arm_01, potted_plant_04,
-book_encyclopedia_set_01, alarm_clock_01 (see coreo/README.md, «Filming on a desk»). With --frame it renders one
+book_encyclopedia_set_01, alarm_clock_01, Ukulele_01, cassette_player, stationery_supplies (see coreo/README.md, «Filming on a desk»). With --frame it renders one
 still (<out> a .png), otherwise the whole clip as numbered PNGs in <out>/ (ffmpeg joins them with the sound).
 
 Why a desk (16/17-oct): Jumper is sold as a desk companion and its spec says indoors only; a park would contradict
@@ -116,8 +118,9 @@ else:
 
 
 # ── the set ───────────────────────────────────────────────────────────────────────────────────────────────────
-def importar(nombre, pos, rot_z=0.0, escala=1.0, apoyo=0.0):
-    """A Poly Haven glTF, its lowest point on z = apoyo, at pos (x, y), turned rot_z degrees."""
+def importar(nombre, pos, rot_z=0.0, escala=1.0, apoyo=0.0, rot_x=0.0):
+    """A Poly Haven glTF, its lowest point on z = apoyo, at pos (x, y), turned rot_z degrees (rot_x first: 90 lays
+    an upright thing down)."""
     antes = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=str(assets / nombre / f"{nombre}.gltf"))
     nuevos = [o for o in bpy.data.objects if o not in antes]
@@ -127,7 +130,7 @@ def importar(nombre, pos, rot_z=0.0, escala=1.0, apoyo=0.0):
         if o.parent is None:
             o.parent = raiz
     raiz.scale = (escala,) * 3
-    raiz.rotation_euler[2] = math.radians(rot_z)
+    raiz.rotation_euler = (math.radians(rot_x), 0, math.radians(rot_z))
     bpy.context.view_layer.update()
     pts = [o.matrix_world @ Vector(c) for o in nuevos if o.type == "MESH" for c in o.bound_box]
     zmin = min(p.z for p in pts)
@@ -150,6 +153,10 @@ importar("desk_lamp_arm_01", (-0.42, 0.30), rot_z=-60)
 importar("potted_plant_04", (-0.40, -0.30))
 importar("book_encyclopedia_set_01", (-0.62, 0.02), rot_z=90)
 importar("alarm_clock_01", (-0.18, 0.40), rot_z=200)
+# music on the desk (17-oct): a ukulele laid down, a cassette walkman; and the pens of a working desk
+importar("Ukulele_01", (-0.33, -0.12), rot_z=35, rot_x=90)
+importar("cassette_player", (-0.16, -0.30), rot_z=25)
+importar("stationery_supplies", (-0.46, 0.36), rot_z=-20)
 
 # the phone beside the robot instead of in a holder (Rodhan, 17-oct): `--telefono-mesa X,Y,GIRO[,INCLINACION]`,
 # metres and degrees; INCLINACION raises its top end, as if leant on something. modulos/cuna/stl/suelto-*.stl.
@@ -234,12 +241,31 @@ cam.dof.aperture_fstop = float(arg("--fstop", 2.8))
 co = bpy.data.objects.new("camara", cam)
 sc.collection.objects.link(co)
 sc.camera = co
-look = Vector(poses[0, 0, :2].tolist() + [ALTO])
-el, az = math.radians(ELEV), math.radians(AZIM)
-fwd = Vector((math.cos(el) * math.cos(az), math.cos(el) * math.sin(az), math.sin(el)))
-co.location = look - DIST * fwd
-co.rotation_euler = fwd.to_track_quat("-Z", "Y").to_euler()
-cam.dof.focus_distance = DIST
+camino = exp / "camara.npy"   # the camera per frame, as ver_clip moved it (exportar_blender.py)
+if camino.exists() and "--camara" not in argv:
+    cams = np.load(camino)
+
+    def poner_camara(i):
+        eye, look = Vector(cams[i, :3].tolist()), Vector(cams[i, 3:6].tolist())
+        co.location = eye
+        co.rotation_euler = (look - eye).to_track_quat("-Z", "Y").to_euler()
+        cam.dof.focus_distance = float(cams[i, 6])
+
+    if frame is None:
+        for i in range(len(cams)):
+            poner_camara(i)
+            co.keyframe_insert("location", frame=i + 1)
+            co.keyframe_insert("rotation_euler", frame=i + 1)
+            cam.dof.keyframe_insert("focus_distance", frame=i + 1)
+    else:
+        poner_camara(frame - 1)
+else:
+    look = Vector(poses[0, 0, :2].tolist() + [ALTO])
+    el, az = math.radians(ELEV), math.radians(AZIM)
+    fwd = Vector((math.cos(el) * math.cos(az), math.cos(el) * math.sin(az), math.sin(el)))
+    co.location = look - DIST * fwd
+    co.rotation_euler = fwd.to_track_quat("-Z", "Y").to_euler()
+    cam.dof.focus_distance = DIST
 
 # ── render ────────────────────────────────────────────────────────────────────────────────────────────────────
 r = sc.render

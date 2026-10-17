@@ -30,8 +30,11 @@ def arg(name):
 
 fps = int(arg("--fps") or 30)
 W, H = (int(v) for v in (arg("--tam") or "540x960").split("x"))
-dist0, azim0, elev0 = (float(v) for v in (arg("--camara") or "0.80,168,-24").split(","))
-dist, azim, elev = dist0, azim0, elev0
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from camara import base as camara_base, camara_en  # noqa: E402
+
+BASE = camara_base(arg("--camara") or "0.80,168,-24")
+dist, azim, elev = BASE[:3]
 guion = json.loads(Path(arg("--guion")).read_text()) if arg("--guion") else {}
 musica = arg("--musica")
 sys.path[:0] = [str(repo.resolve() / "tools"), str(repo.resolve())]
@@ -106,20 +109,6 @@ def project(p, eye):
     return np.stack([W / 2 + f_px * (v @ right) / d, H / 2 - f_px * (v @ up) / d], axis=-1), d
 
 
-def camara_en(t, base, ordenes, paso=0.6):
-    """The camera at time t: the guion's `camara` orders ([t, "dist,azim,elev[,height]"]) each glide there over
-    `paso` s (smoothstep) from where the camera was; before the first, `base`. Height is the look-at point's z (m)."""
-    cur = list(base)
-    for te, v in ordenes:
-        if te > t:
-            break
-        goal = [float(x) for x in v.split(",")]
-        goal += cur[len(goal):]
-        u = min(max((t - te) / paso, 0.0), 1.0)
-        u = u * u * (3 - 2 * u)
-        cur = [a + (b - a) * u for a, b in zip(cur, goal)]
-    return cur
-
 
 def at(orders, t):
     now = [e for te, e in orders if te <= t + 1e-9]
@@ -138,9 +127,9 @@ for k in rows:
     data.qpos[free + 3:free + 7] = quat
     data.qpos[adr] = q[k]
     mujoco.mj_kinematics(model, data)
-    dist, azim, elev, alto = camara_en(k * dt, [dist0, azim0, elev0, 0.08], guion.get("camara", []))
+    dist, azim, elev, alto, dx, dy = camara_en(k * dt, BASE, guion.get("camara", []))
     fwd, right, up = ejes(azim, elev)
-    look = np.array([x, y, alto])
+    look = np.array([x + dx, y + dy, alto])
     eye = look - dist * fwd
     im = Image.new("RGB", (W, H), (150, 156, 162))
     dr = ImageDraw.Draw(im)

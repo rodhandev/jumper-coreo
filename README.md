@@ -65,10 +65,37 @@ python scripts/train.py --task jumper.coreo               # learn it
 | `puente/ver_clip.py` | kinematic preview video, face screen following the script |
 | `puente/esqueleto.py` | fast preview on the CPU: flat outlines of each part, claws coloured by screen side (`construir.py --esqueleto`) |
 | `puente/factible.py` | can the real robot do it: joint speed, arm torque against the servo's measured curve, lag, self-contact, clearance to the phone |
+| `puente/golpe.py` | the other end of a stroke (strum, key, drum hit): a tip move from a posture with the arm in the same fold, so the stroke stays short |
+| `puente/instrumento.py` | which instrument is playing, second by second (YAMNet), and which step plays along; `coreo bailar --instrumentos` uses it |
+| `puente/sonido_movimiento.py` | the clip's own movement sound: servo whir by speed, feet landing, pincer clicks, air on fast moves, the body settling |
 | `puente/compatibilidad.py` | which claw posture goes with which leg stance without tipping over |
 | `puente/exportar_robot.py`, `extraer_posturas.py` | regenerate `robot.json` and `posturas/base.toml` from Jumper |
 
 The `jumper.coreo` task lives in [rodhandev/jumper](https://github.com/rodhandev/jumper) (branch `coreo-task`).
+
+## Listening to the instrument
+
+Jumper mimes the instrument it hears: `violin`, `guitarra`, `piano`, `tambor`, `viento` (trumpet, sax, flute),
+`arpa` (also xylophone, marimba), `sacudir` (maracas, tambourine), `dj` (electronic music) and `cantar` (voice).
+An instrument without a step of its own takes the closest gesture (a cello is bowed, an organ has keys); when
+nothing is clearly ahead the robot sways. `puente/instrumento.py` lists every AudioSet class each step stands for.
+
+It listens with [YAMNet](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet) (Apache-2.0,
+4 MB as TFLite, small enough for the robot's RK3576). The model is fetched, not committed:
+
+```sh
+mkdir -p recursos/modelos && cd recursos/modelos     # next to the coreo checkout
+curl -LO https://storage.googleapis.com/download.tensorflow.org/models/tflite/task_library/audio_classification/android/lite-model_yamnet_classification_tflite_1.tflite
+mv lite-model_yamnet_classification_tflite_1.tflite yamnet.tflite
+curl -LO https://raw.githubusercontent.com/tensorflow/models/master/research/audioset/yamnet/yamnet_class_map.csv
+uv pip install ai-edge-litert
+python puente/instrumento.py track.wav --json tramos.json
+coreo bailar track.pulsos.json --estilo romantico --instrumentos tramos.json -o baile.guion
+```
+
+Every instrument step is checked with `puente/factible.py`: within the servo's curve, no claw into the other or
+the body, the body tilted at most 7°. Both front claws are also feet, so the side-reaching gestures (harp,
+maracas) play one claw at a time.
 
 ## Español
 

@@ -1,0 +1,10 @@
+# «Toca la guitarra»: la tenaza izquierda del robot (a la derecha de la pantalla) es el mástil, hacia arriba y
+# afuera; la derecha rasguea delante del cuerpo en golpes de medio pulso; el cuerpo marca el pulso.
+dura 8
+@0 cara musica
+@0 tenaza_izq guitarra_mastil en 2
+@1 tenaza_der guitarra_rasgueo_a en 1.5
+@2.5 alternar tenaza_der guitarra_rasgueo_b guitarra_rasgueo_a veces 7 cada 0.5
+@2.5 alternar patas agachado de_pie veces 4 cada 1
+@6 tenaza_der reposo en 1.5
+@6 tenaza_izq reposo en 1.5

@@ -1,0 +1,11 @@
+# «Canta» (voz principal, coro): la tenaza derecha de micrófono ante el visor; la izquierda se abre hacia el
+# público en la frase alta y vuelve; el cuerpo se mece.
+dura 8
+@0 cara musica
+@0 tenaza_der microfono en 1
+@2 tenaza_izq abrir_brazo en 1.5
+@4.5 tenaza_izq reposo en 1.5
+@0 patas mecer_izq en 2
+@4 patas mecer_der en 2
+@6.5 tenaza_der reposo en 1.5
+@7 patas de_pie en 1

@@ -1,0 +1,10 @@
+# «Toca el tambor»: las tenazas suben y golpean abajo, alternas, al pulso; el cuerpo baja con cada golpe.
+dura 8
+@0 cara jugueton
+@0 tenaza_izq tambor_alto en 1.5
+@0.75 tenaza_der tambor_alto en 1.25
+@2 alternar tenaza_izq tambor_bajo tambor_alto veces 8 cada 0.5
+@2.5 alternar tenaza_der tambor_bajo tambor_alto veces 7 cada 0.5
+@2 alternar patas agachado de_pie veces 4 cada 1
+@6 tenazas reposo en 2
+@6.5 patas de_pie en 1

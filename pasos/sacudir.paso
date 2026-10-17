@@ -1,0 +1,13 @@
+# «Sacude las maracas» (también pandereta, cascabeles): una tenaza arriba a su lado, sacudidas cortas a medio
+# pulso, y luego la otra; el cuerpo se mece hacia el otro lado para no volcar.
+dura 8
+@0 cara jugueton
+@0 tenaza_izq maraca_a en 1.5
+@0 patas mecer_der en 1.5
+@1.5 alternar tenaza_izq maraca_b maraca_a veces 4 cada 0.5
+@3.5 tenaza_izq reposo en 1
+@4 tenaza_der maraca_a en 1
+@4 patas mecer_izq en 1
+@5 alternar tenaza_der maraca_b maraca_a veces 4 cada 0.5
+@7 tenaza_der reposo en 1
+@7 patas de_pie en 1

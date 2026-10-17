@@ -7,7 +7,7 @@ blend into the shell, and printable.
 | Version | The phone | Good for |
 |---|---|---|
 | `vertical` | stands in portrait right behind the visor, leaning back 6°, in a sleeve whose front opens in one curve and whose base flows onto the shell | the screen faces you: notifications, a video call, the agent's replies |
-| `plana` | lies in portrait along the shell, screen up, held at its four corners by curved hooks on a bed shaped to the shell | the lowest centre of mass and nothing for a claw to reach: walking and jumping |
+| `plana` | lies in portrait along the shell, screen up, in a bumper frame that wraps all four sides and comes 3.5 mm over the screen's border (scooped at the sides for a finger, open at the bottom for USB-C), on a bed whose skirt flows into the shell | the lowest centre of mass and nothing for a claw to reach; **the one for the contest video** (16 Oct) |
 
 The phone (`telefono.scad`) has the size and mass of today's common 6.1" phones: 147.6 × 71.6 × 7.8 mm, 172 g,
 rounded outline, a camera pill and a three-lens block, no brand.
@@ -16,6 +16,7 @@ rounded outline, a camera pill and a three-lens block, no brand.
 |---|---|
 | `cuna-vertical.scad`, `cuna-plana.scad` | the holders (OpenSCAD + [BOSL2](https://github.com/BelfrySCAD/BOSL2), BSD-2-Clause), in Jumper's `base_link` frame, mm; each also places the phone (`-D parte=…`) |
 | `telefono.scad` | the phone, one part per colour |
+| `pantallas.py` | what the phone's screen shows, drawn per frame: lock screen, music player, incoming call, message, video call, alarm, calendar reminder, charging, heating dial; no third-party logo |
 | `stl/<version>-<part>.stl` | built from them: `cuna` (one closed piece), `cuerpo`, `pantalla`, `isla`, `camara` |
 | `caparazon.py` | writes `caparazon.stl`, the shell's top under both holders, from a jumper checkout |
 | `montar.py` | adds a holder and the phone to a Jumper MJCF, with their masses, for training and video |
@@ -23,16 +24,20 @@ rounded outline, a camera pill and a three-lens block, no brand.
 
 ```sh
 bash construir.sh <jumper checkout>
-python montar.py <jumper>/assets/jumper/jumper.xml jumper-telefono.xml --version vertical   # or plana
+python montar.py <jumper>/assets/jumper/jumper.xml jumper-telefono.xml --version plana   # or vertical
 ```
+
+`montar.py` also gives the screen texture coordinates (its «up» is the camera pill's end, however the holder
+lays the phone), so `puente/ver_clip.py` can show on it what the guion's `telefono <estado>` orders ask for,
+redrawn every frame (the equaliser moves, the call rings).
 
 ## Checked in simulation (15 Oct 2026)
 
-- **Mass:** holder 48 g (`vertical`, 46 cm³) or 63 g (`plana`, 60 cm³) as PLA, plus the 172 g phone. The robot goes
-  from 2.54 to 2.76 or 2.78 kg.
+- **Mass:** holder 48 g (`vertical`, 46 cm³) or 80 g (`plana`, 76 cm³) as PLA, plus the 172 g phone. The robot goes
+  from 2.54 to 2.76 or 2.79 kg.
 - **The claws clear them** (`puente/factible.py`, robot posed at every row of the romantic dance, the mix-up dance,
   the wave and the stock `demo` dance): with `vertical` no leg comes within 30 mm of the holder or the phone; with
-  `plana` the closest is a palm at 12 mm, while it scratches its head.
+  `plana` the closest is a palm at 11 mm, while it scratches its head (16 Oct, with the frame).
 
 Not checked yet: the trained dances with these holders on (the policy was trained with the earlier cradle and the
 earlier violin; it has to be trained again before the final video).

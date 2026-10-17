@@ -10,7 +10,10 @@ solver and the 22 joints, drawn with any MJCF (the Zymbot colours, for example).
 With `--caras` and a model that has a `cara` geom (recolorear.py --cara), the face
 screen follows the guion's `cara` orders: each PNG in the directory is one
 expression, named as the guion names it. With `--musica` (and `--guion`, for the
-clip's `musica_desfase`) the track is laid under the video from the clip's first beat.
+clip's `musica_desfase`) the track is laid under the video from the clip's first beat. With a model that
+carries the phone (modulos/cuna/montar.py) and a guion with `telefono` orders, the phone's screen shows each
+state as it moves (modulos/cuna/pantallas.py), redrawn every frame. A guion's `camara` orders
+([t, "dist,azim,elev[,height]"]) move the camera there smoothly, e.g. closer when the phone shows something.
 """
 
 import json
@@ -77,7 +80,7 @@ model.vis.global_.offwidth, model.vis.global_.offheight = W, H
 r = mujoco.Renderer(model, H, W)
 cam = mujoco.MjvCamera()
 # --camara DIST,AZIMUT,ELEVACION (m, grados): 160 o 180 de azimut mira a la cara; 135 de tres cuartos.
-cam.distance, cam.azimuth, cam.elevation = (float(v) for v in (arg("--camara") or "0.75,135,-18").split(","))
+BASE = [float(v) for v in (arg("--camara") or "0.75,135,-18").split(",")] + [0.08]
 audio = ["-ss", f"{desfase:.3f}", "-i", musica, "-shortest", "-c:a", "aac"] if musica else []
 ff = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
                        "-s", f"{W}x{H}", "-r", str(fps), "-i", "-", *audio, "-pix_fmt", "yuv420p", str(dest)],
@@ -90,6 +93,42 @@ pantallas = [(g, p) for g, p in pantallas if g >= 0]
 for _, e in ordenes:
     if any(mid(p + e) < 0 for _, p in pantallas):
         raise SystemExit(f"the guion asks for face «{e}» and {caras} has no {e}.png")
+
+
+telefono = guion.get("telefono", [])
+tex = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_TEXTURE, "pantalla")
+if telefono and tex >= 0:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "modulos" / "cuna"))
+    from pantallas import imagen  # noqa: E402
+
+    tw, th, tc = model.tex_width[tex], model.tex_height[tex], model.tex_nchannel[tex]
+    tadr = model.tex_adr[tex]
+
+
+def pantalla(t):
+    """Draw the phone's screen for time t into texture `pantalla` and send it to the GPU."""
+    now = [(te, e) for te, e in telefono if te <= t + 1e-9]
+    if not now:
+        return
+    te, e = now[-1]
+    im = imagen(e, t - te, tw, th).convert("RGB" if tc == 3 else "RGBA")
+    model.tex_data[tadr:tadr + tw * th * tc] = np.asarray(im, dtype=np.uint8).reshape(-1)
+    mujoco.mjr_uploadTexture(model, r._mjr_context, tex)
+
+
+def camara_en(t, base, ordenes, paso=0.6):
+    """The camera at time t: the guion's `camara` orders ([t, "dist,azim,elev[,height]"]) each glide there over
+    `paso` s (smoothstep) from where the camera was; before the first, `base`. Height is the look-at point's z (m)."""
+    cur = list(base)
+    for te, v in ordenes:
+        if te > t:
+            break
+        goal = [float(x) for x in v.split(",")]
+        goal += cur[len(goal):]
+        u = min(max((t - te) / paso, 0.0), 1.0)
+        u = u * u * (3 - 2 * u)
+        cur = [a + (b - a) * u for a, b in zip(cur, goal)]
+    return cur
 
 
 def face_at(t):
@@ -111,7 +150,10 @@ for k in rows:
     if (e := face_at(k * dt)) is not None:
         for g, p in pantallas:
             model.geom_matid[g] = mid(p + e)
-    cam.lookat[:] = (x, y, 0.08)
+    if telefono and tex >= 0:
+        pantalla(k * dt)
+    cam.distance, cam.azimuth, cam.elevation, alto = camara_en(k * dt, BASE[:4], guion.get("camara", []))
+    cam.lookat[:] = (x, y, alto)
     r.update_scene(data, cam)
     ff.stdin.write(r.render().tobytes())
 ff.stdin.close()

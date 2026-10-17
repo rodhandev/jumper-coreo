@@ -1,0 +1,10 @@
+# «Toca un instrumento de viento» (trompeta, saxo, flauta): la tenaza izquierda delante del visor, su pinza abre
+# y cierra como dedos en las llaves, y el cuerpo se inclina atrás en las notas largas. La otra tenaza se queda en
+# el suelo: con las dos delante del visor se tocan.
+dura 8
+@0 cara musica
+@0 tenaza_izq viento en 2
+@2 alternar tenaza_izq viento_dedos viento veces 8 cada 0.5
+@2 patas inclinar_atras en 2
+@4 patas de_pie en 2
+@6 tenaza_izq reposo en 2

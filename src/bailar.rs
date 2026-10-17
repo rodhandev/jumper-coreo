@@ -1,10 +1,15 @@
 //! El bailarín automático: de los pulsos de una pista a un guion completo.
 //!
-//!   coreo bailar <pulsos.json> --estilo romantico|rapido|clasico [--compases N] [--semilla S] -o baile.guion
+//!   coreo bailar <pulsos.json> --estilo romantico|rapido|clasico [--compases N] [--semilla S]
+//!                [--instrumentos <tramos.json>] -o baile.guion
 //!
 //! Empieza en el primer compás que detectó `zym-compas pulsos`, llena cada hueco con un paso del estilo
 //! (`pasos/estilos.toml`) sin repetir el mismo dos veces seguidas, y cierra con una celebración. El guion sale
 //! como texto para poder leerlo y afinarlo a mano: la máquina propone, el guion se revisa.
+//!
+//! Con `--instrumentos` (lo que escribe `puente/instrumento.py --json`: qué instrumento suena en cada tramo), el
+//! robot toca el que suena (Rodhan, 16-oct): en cada hueco, si el tramo tiene un paso de instrumento, va ése, y
+//! puede repetirse mientras siga sonando; si no («mecerse»), sigue el estilo.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -15,6 +20,12 @@ struct Pulsos {
     pulsos: Vec<f64>,
     #[serde(default)]
     compases: Vec<f64>,
+}
+
+#[derive(Deserialize)]
+struct Tramos {
+    /// [inicio s, fin s, paso, puntuación]
+    tramos: Vec<(f64, f64, String, f64)>,
 }
 
 #[derive(Deserialize)]
@@ -41,7 +52,18 @@ pub fn bailar(
     compases: Option<usize>,
     semilla: u64,
     pasos: &Path,
+    instrumentos: Option<&Path>,
 ) -> Result<String, String> {
+    let tramos = match instrumentos {
+        Some(f) => {
+            let t: Tramos = serde_json::from_str(
+                &std::fs::read_to_string(f).map_err(|e| format!("{}: {e}", f.display()))?,
+            )
+            .map_err(|e| format!("{}: {e}", f.display()))?;
+            t.tramos
+        }
+        None => Vec::new(),
+    };
     let p: Pulsos = serde_json::from_str(
         &std::fs::read_to_string(pulsos_json)
             .map_err(|e| format!("{}: {e}", pulsos_json.display()))?,
@@ -83,8 +105,16 @@ pub fn bailar(
     let mut anterior = String::new();
     let mut hechos = 0;
     while compases.map_or(true, |n| hechos < n) {
+        // el instrumento que suena en este pulso, si hay uno reconocido
+        let t = p.pulsos.get(b as usize).copied().unwrap_or(f64::INFINITY);
+        let toca = tramos
+            .iter()
+            .find(|(a, z, paso, _)| *a <= t && t < *z && paso != "mecerse")
+            .map(|x| x.2.clone());
         let mut nombre = e.pasos[k % e.pasos.len()].clone();
-        if nombre == anterior {
+        if let Some(i) = toca {
+            nombre = i;
+        } else if nombre == anterior {
             k += 1;
             nombre = e.pasos[k % e.pasos.len()].clone();
         }
@@ -106,4 +136,28 @@ pub fn bailar(
         b + 2.0
     );
     Ok(g)
+}
+
+#[cfg(test)]
+mod pruebas {
+    use super::*;
+
+    #[test]
+    fn toca_el_instrumento_que_suena_y_si_no_sigue_el_estilo() {
+        let dir = std::env::temp_dir().join(format!("coreo-bailar-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("estilos.toml"), "[e]\ncara = \"sonrisa\"\npasos = [\"mecerse\"]\n").unwrap();
+        for p in ["mecerse", "violin"] {
+            std::fs::write(dir.join(format!("{p}.paso")), "dura 4\n").unwrap();
+        }
+        let pulsos: Vec<f64> = (0..40).map(|i| i as f64 * 0.5).collect();
+        std::fs::write(dir.join("p.json"), serde_json::json!({ "pulsos": pulsos }).to_string()).unwrap();
+        // violín de 0 a 5 s (pulsos 0-9, a medio segundo), nada reconocido después
+        std::fs::write(dir.join("t.json"), r#"{"tramos": [[0, 5, "violin", 0.3], [5, 20, "mecerse", 0]]}"#).unwrap();
+        let g = bailar(&dir.join("p.json"), "e", None, 0, &dir, Some(&dir.join("t.json"))).unwrap();
+        assert!(g.contains("@1 paso violin\n@5 paso violin\n@9 paso violin\n@13 paso mecerse\n"), "{g}");
+        let sin = bailar(&dir.join("p.json"), "e", None, 0, &dir, None).unwrap();
+        assert!(!sin.contains("violin"));
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }

@@ -1,0 +1,11 @@
+# «Toca el piano»: las dos tenazas delante y abajo, teclean alternas a medio pulso y la izquierda se abre a un lado.
+dura 8
+@0 cara musica
+@0 tenaza_izq piano_arriba en 1.5
+@0.75 tenaza_der piano_arriba en 1.25
+@2 alternar tenaza_izq piano_abajo piano_arriba veces 6 cada 0.5
+@2.25 alternar tenaza_der piano_abajo piano_arriba veces 6 cada 0.5
+@5 tenaza_izq piano_lado en 1
+@5 patas mecer_izq en 1
+@6 tenazas reposo en 2
+@6 patas de_pie en 1.5

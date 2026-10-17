@@ -8,6 +8,7 @@
 //! @1   tenaza_izq arriba en 1 suave           # suave (mínimo tirón, por defecto) | lineal
 //! @2   alternar tenaza_izq arriba_b arriba veces 6 cada 0.5
 //! @5   sonido celebracion
+//! @5   telefono musica                   # lo que muestra la pantalla del teléfono (modulos/cuna)
 //! @6   tenaza_izq reposo en 1
 //! @6   patas de_pie en 1
 //! @8   fin
@@ -61,6 +62,7 @@ pub enum Orden {
     },
     Cara(String),
     Sonido(String),
+    Telefono(String),
     Fin,
 }
 
@@ -297,6 +299,9 @@ fn leer_orden(g: &Guion, p: &[&str]) -> Result<Orden, String> {
     };
     match p.first().copied() {
         Some("cara") => Ok(Orden::Cara(p.get(1).ok_or("cara <expresión>")?.to_string())),
+        Some("telefono") => Ok(Orden::Telefono(
+            p.get(1).ok_or("telefono <estado>")?.to_string(),
+        )),
         Some("sonido") => Ok(Orden::Sonido(
             p.get(1).ok_or("sonido <nombre>")?.to_string(),
         )),
@@ -351,6 +356,8 @@ pub struct Clip {
     pub q: Vec<Vec<f64>>,
     pub cara: Vec<(f64, String)>,
     pub sonidos: Vec<(f64, String)>,
+    /// Qué muestra la pantalla del teléfono desde cada instante (reposo, musica, llamada…).
+    pub telefono: Vec<(f64, String)>,
     pub informe: Informe,
 }
 
@@ -373,6 +380,7 @@ pub fn compilar(g: &Guion, robot: &Robot) -> Result<Clip, String> {
     let mut movs: Vec<Mov> = Vec::new();
     let mut cara = Vec::new();
     let mut sonidos = Vec::new();
+    let mut telefono = Vec::new();
     let mut empujar = |n: usize,
                        t0: f64,
                        en: f64,
@@ -431,6 +439,7 @@ pub fn compilar(g: &Guion, robot: &Robot) -> Result<Clip, String> {
             }
             Orden::Cara(e) => cara.push((l.t, e.clone())),
             Orden::Sonido(s) => sonidos.push((l.t, s.clone())),
+            Orden::Telefono(e) => telefono.push((l.t, e.clone())),
             Orden::Fin => {}
         }
     }
@@ -500,6 +509,7 @@ pub fn compilar(g: &Guion, robot: &Robot) -> Result<Clip, String> {
         q,
         cara,
         sonidos,
+        telefono,
         informe: Informe {
             vel_max,
             vel_max_en,
@@ -521,6 +531,18 @@ mod pruebas {
         .unwrap();
         assert_eq!(g.lineas[0].t, 1.0); // 2 pulsos a 120 bpm
         assert_eq!(g.lineas[1].t, 1.5);
+    }
+
+    #[test]
+    fn telefono_se_lee_como_cara() {
+        let g = leer(
+            "pulso 60\n@1 telefono musica\n@2 fin\n",
+            std::path::Path::new("."),
+            std::path::Path::new("."),
+        )
+        .unwrap();
+        assert!(matches!(&g.lineas[0].orden, Orden::Telefono(e) if e == "musica"));
+        assert!(leer("@0 telefono\n@1 fin\n", std::path::Path::new("."), std::path::Path::new(".")).is_err());
     }
 
     #[test]

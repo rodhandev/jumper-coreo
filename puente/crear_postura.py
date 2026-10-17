@@ -95,7 +95,8 @@ def main() -> None:
                 mj.mj_jacSite(m, d, jac, None, s)
                 J = jac[:, cols(idx)]
                 row[idx] += J.T @ np.linalg.solve(J @ J.T + 1e-5 * np.eye(3), 0.5 * err)
-            row = np.clip(row, R.range[:, 0], R.range[:, 1])
+            # 2 mrad inside the stops: a value written at the stop, rounded and mirrored, can land just past it
+            row = np.clip(row, R.range[:, 0] + 0.002, R.range[:, 1] - 0.002)
             if err_all < 1e-5:
                 break
         return row, err_all
@@ -154,13 +155,19 @@ def main() -> None:
 
         best = None
         chocan = 0
-        for row in starts:
+        for i, row in enumerate(starts):
             row, err = ik(row, [(site("LF"), idx, punta)])
             if err <= REACH and touches(row):
                 chocan += 1
+                if desde and i == 0:
+                    print(f"  (from --desde {desde} it reaches, but the claw goes into the body; trying other folds)")
                 continue
-            # without --apunta, the closest solve; with it, of those that reach, the best aimed
-            key = (err > REACH, desvio(row) if apunta is not None and err <= REACH else 0.0, err)
+            if desde and i == 0 and err > REACH:
+                print(f"  (from --desde {desde} it misses by {err * 1000:.1f} mm; trying other folds)")
+            # without --apunta, the closest solve; with it, of those that reach, the best aimed; with --desde, the
+            # solve from that posture when it reaches, so the arm keeps its fold and a move between the two is short
+            key = (err > REACH, desvio(row) if apunta is not None and err <= REACH else 0.0,
+                   0 if (desde and i == 0) else 1, err)
             if best is None or key < best[2]:
                 best = (row, err, key)
         row, err, _ = best

@@ -86,7 +86,8 @@ fn run(args: &[String]) -> Result<(), String> {
             let semilla = args.iter().position(|a| a == "--semilla").and_then(|i| args.get(i + 1)).and_then(|x| x.parse().ok()).unwrap_or(0);
             let pasos = opt(args, "--pasos", &base.join("pasos").to_string_lossy());
             let dest = opt(args, "-o", "baile.guion");
-            let g = bailar::bailar(&src, estilo, compases, semilla, &pasos)?;
+            let instrumentos = args.iter().position(|a| a == "--instrumentos").and_then(|i| args.get(i + 1)).map(PathBuf::from);
+            let g = bailar::bailar(&src, estilo, compases, semilla, &pasos, instrumentos.as_deref())?;
             std::fs::write(&dest, &g).map_err(|e| format!("{}: {e}", dest.display()))?;
             println!("{} -> {}: {} pasos", src.display(), dest.display(), g.matches(" paso ").count());
             Ok(())
@@ -106,7 +107,7 @@ fn run(args: &[String]) -> Result<(), String> {
             Ok(())
         }
         _ => Err(
-            "uso: coreo compilar <guion> -o <clip.json> | coreo posturas | coreo sonidos <dir> | coreo bailar <pulsos.json> --estilo <e> -o <guion>  \
+            "uso: coreo compilar <guion> -o <clip.json> | coreo posturas | coreo sonidos <dir> | coreo bailar <pulsos.json> --estilo <e> [--instrumentos <tramos.json>] -o <guion>  \
                   [--robot robot.json] [--posturas posturas/]"
                 .into(),
         ),

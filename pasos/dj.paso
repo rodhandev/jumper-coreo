@@ -1,0 +1,10 @@
+# «Pincha como DJ» (electrónica, o un ritmo sin instrumento claro): una tenaza en el auricular, la otra hace
+# scratch sobre el disco a medio pulso, y el cuerpo rebota.
+dura 8
+@0 cara jugueton
+@0 tenaza_izq rascar_a en 2
+@0.5 tenaza_der dj_disco_a en 1.5
+@2 alternar tenaza_der dj_disco_b dj_disco_a veces 8 cada 0.5
+@2 alternar patas agachado de_pie veces 4 cada 1
+@6 tenazas reposo en 2
+@6.5 patas de_pie en 1

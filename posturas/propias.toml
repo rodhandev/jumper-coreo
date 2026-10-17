@@ -196,3 +196,155 @@ J1 = -2.0769
 J2 = -0.4397
 J3 = -0.3228
 J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [185, 150, 45] mm, apuntando a [0.2, 0.8, 0.45] (60 deg de desvío)
+[tenaza.guitarra_mastil]
+J0 = -0.6821
+J1 = 0.8096
+J2 = -0.4202
+J3 = 1.4132
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [225, 40, -50] mm, apuntando a [0.6, 0.3, -0.7] (26 deg de desvío)
+[tenaza.dj_disco_a]
+J0 = -1.9218
+J1 = -1.9162
+J2 = -0.7375
+J3 = 1.4484
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [150, 30, 40] mm, apuntando a [-0.6, -0.3, 0.6] (66 deg de desvío)
+[tenaza.microfono]
+J0 = -0.6234
+J1 = -2.2430
+J2 = -0.4640
+J3 = -1.8120
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [195, 165, 60] mm, apuntando a [0.2, 0.8, 0.5] (50 deg de desvío)
+[tenaza.abrir_brazo]
+J0 = -0.6189
+J1 = 0.7623
+J2 = 0.0731
+J3 = 0.8124
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [190, 122, 50] mm, apuntando a [0.3, 0.5, 0.8] (43 deg de desvío)
+[tenaza.maraca_a]
+J0 = -0.0839
+J1 = -2.1497
+J2 = -2.0471
+J3 = 0.7608
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [200, 125, 30] mm, apuntando a [0.3, 0.4, 0.8] (42 deg de desvío)
+[tenaza.arpa_alta]
+J0 = -0.8483
+J1 = -2.5529
+J2 = 0.5829
+J3 = -1.7009
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [185, 5, 45] mm, apuntando a [-0.3, -0.6, 0.2] (47 deg de desvío)
+[tenaza.viento]
+J0 = -1.0375
+J1 = -2.1890
+J2 = -0.4093
+J3 = -1.3605
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [205, 125, -10] mm
+[tenaza.arpa_baja]
+J0 = -0.6609
+J1 = -1.8681
+J2 = 0.4555
+J3 = -1.6947
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [195, 128, 38] mm
+[tenaza.maraca_b]
+J0 = -0.0994
+J1 = -2.0696
+J2 = -2.0133
+J3 = 0.7941
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [185, 5, 45] mm
+[tenaza.viento_dedos]
+J0 = -1.0375
+J1 = -2.1890
+J2 = -0.4093
+J3 = -1.3605
+J4 = -0.5000
+
+# crear_postura: punta de la tenaza izquierda en [205, 40, 0] mm, apuntando a [0.5, -0.3, -0.8] (64 deg de desvío)
+[tenaza.guitarra_rasgueo]
+J0 = -0.7095
+J1 = -1.8333
+J2 = -0.3893
+J3 = -1.4069
+J4 = 0.0000
+
+# golpe.py: desde guitarra_rasgueo, la punta [0, -3, 22] mm (error 2.3 mm)
+[tenaza.guitarra_rasgueo_a]
+J0 = -0.7094
+J1 = -1.9712
+J2 = -0.5152
+J3 = -1.2829
+J4 = 0.0000
+
+# golpe.py: desde guitarra_rasgueo, la punta [0, 3, -22] mm (error 1.3 mm)
+[tenaza.guitarra_rasgueo_b]
+J0 = -0.7438
+J1 = -1.6725
+J2 = -0.2437
+J3 = -1.5255
+J4 = 0.0000
+
+# golpe.py: desde tambor_bajo, la punta [0, 0, 35] mm (error 3.9 mm)
+[tenaza.tambor_alto]
+J0 = -0.8113
+J1 = -1.8765
+J2 = 0.1382
+J3 = -1.6185
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [200, 70, -78] mm, apuntando a [0.6, 0.0, -0.8] (3 deg de desvío)
+[tenaza.tambor_bajo]
+J0 = -1.5477
+J1 = -0.1514
+J2 = 0.8781
+J3 = -1.9444
+J4 = 0.0000
+
+# crear_postura: punta de la tenaza izquierda en [200, 62, -60] mm, apuntando a [0.6, 0.0, -0.8] (38 deg de desvío)
+[tenaza.piano_arriba]
+J0 = -0.0693
+J1 = -1.4034
+J2 = -2.1980
+J3 = 0.4226
+J4 = 0.0000
+
+# golpe.py: desde piano_arriba, la punta [0, 0, -18] mm (error 2.0 mm)
+[tenaza.piano_abajo]
+J0 = -0.2055
+J1 = -1.2942
+J2 = -2.1233
+J3 = 0.5112
+J4 = 0.0000
+
+# golpe.py: desde piano_arriba, la punta [0, 30, 0] mm (error 1.0 mm)
+[tenaza.piano_lado]
+J0 = 0.0170
+J1 = -1.4061
+J2 = -2.2000
+J3 = 0.5671
+J4 = 0.0000
+
+# golpe.py: desde dj_disco_a, la punta [0, 40, 0] mm (error 1.2 mm)
+[tenaza.dj_disco_b]
+J0 = -1.7866
+J1 = -1.8389
+J2 = -0.6016
+J3 = 1.4125
+J4 = 0.0000

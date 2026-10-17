@@ -4,15 +4,18 @@ musica /media/rodri/Rodri4sci/jumper-workspace/salidas/musica/jumper-romantico-1
 
 @0  cara maravilla
 @0  sonido atencion                 # curiosidad: despierta al oír su nombre
+@0  telefono reposo
 @1  paso saludo                     # 8 pulsos
 @9  paso pensar                     # expectativa: se rasca la cabeza (4)
 @13 paso inclinarse                 # sorpresa: «¡ah!» (4)
 @13 cara sonrisa
 @13 sonido sorpresa
+@13 telefono musica                 # «something romantic»: el teléfono pone la balada
 @17 paso violin                     # MOMENTO CLAVE (8)
 @25 paso besitos                    # PICO de cariño: única vez de la cara de espirales (4)
 @29 paso mecerse                    # respiro (4)
 @33 paso reverencia                 # cierre (8)
 @33 cara jugueton
 @33 sonido celebracion
+@37 telefono termostato             # y además bajó la calefacción, que era lo que le pidieron
 @43 fin

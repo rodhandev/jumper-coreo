@@ -1,0 +1,13 @@
+# «Toca el arpa» (también xilófono, marimba): una tenaza puntea de arriba abajo a su lado, despacio, y luego la
+# otra. De una en una: las tenazas delanteras también son patas, y con las dos arriba a los lados se vuelca.
+dura 8
+@0 cara musica
+@0 tenaza_izq arpa_alta en 1.5
+@0 patas mecer_der en 1.5
+@1.5 alternar tenaza_izq arpa_baja arpa_alta veces 2 cada 1
+@3.5 tenaza_izq reposo en 1
+@4 tenaza_der arpa_alta en 1
+@4 patas mecer_izq en 1
+@5 alternar tenaza_der arpa_baja arpa_alta veces 2 cada 1
+@7 tenaza_der reposo en 1
+@7 patas de_pie en 1

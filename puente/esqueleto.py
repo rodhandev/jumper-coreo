@@ -4,7 +4,7 @@ Rodhan (15-oct): «what if we only use the skeleton to see how it is turning out
 then do not convince?». Each part of the robot is drawn as the outline (convex hull) of its mesh, far to near, so
 the pose reads like the render, at a fraction of the cost and without the GPU (shared, one job at a time). The two
 claws are coloured by SCREEN side as the camera sees them (orange on the right, blue on the left), to talk about
-moves in screen quadrants; with --guion the current face and sound are written on the frame, and with --musica the
+moves in screen quadrants; with --guion the current face, sound and phone screen are written on the frame, and with --musica the
 track goes under it.
 
     python esqueleto.py <jumper checkout> <clip.npz> <model.xml> <out.mp4> [--fps 30] [--tam 540x960]
@@ -30,7 +30,8 @@ def arg(name):
 
 fps = int(arg("--fps") or 30)
 W, H = (int(v) for v in (arg("--tam") or "540x960").split("x"))
-dist, azim, elev = (float(v) for v in (arg("--camara") or "0.80,168,-24").split(","))
+dist0, azim0, elev0 = (float(v) for v in (arg("--camara") or "0.80,168,-24").split(","))
+dist, azim, elev = dist0, azim0, elev0
 guion = json.loads(Path(arg("--guion")).read_text()) if arg("--guion") else {}
 musica = arg("--musica")
 sys.path[:0] = [str(repo.resolve() / "tools"), str(repo.resolve())]
@@ -83,10 +84,15 @@ for g in range(model.ngeom):
         kind = "base" if rgba[:3].mean() > 0.5 else "dark"
     geoms.append((g, pts, kind))
 
-el, az = np.radians(elev), np.radians(azim)
-fwd = np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)])
-right = np.cross(fwd, [0, 0, 1]); right /= np.linalg.norm(right)
-up = np.cross(right, fwd)
+def ejes(azim, elev):
+    el, az = np.radians(elev), np.radians(azim)
+    fwd = np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)])
+    right = np.cross(fwd, [0, 0, 1])
+    right /= np.linalg.norm(right)
+    return fwd, right, np.cross(right, fwd)
+
+
+fwd, right, up = ejes(azim, elev)
 f_px = (H / 2) / np.tan(np.radians(model.vis.global_.fovy) / 2)
 try:
     FONT = ImageFont.truetype("/usr/share/fonts/opentype/inter/Inter-Bold.otf", max(14, H // 40))
@@ -98,6 +104,21 @@ def project(p, eye):
     v = p - eye
     d = v @ fwd
     return np.stack([W / 2 + f_px * (v @ right) / d, H / 2 - f_px * (v @ up) / d], axis=-1), d
+
+
+def camara_en(t, base, ordenes, paso=0.6):
+    """The camera at time t: the guion's `camara` orders ([t, "dist,azim,elev[,height]"]) each glide there over
+    `paso` s (smoothstep) from where the camera was; before the first, `base`. Height is the look-at point's z (m)."""
+    cur = list(base)
+    for te, v in ordenes:
+        if te > t:
+            break
+        goal = [float(x) for x in v.split(",")]
+        goal += cur[len(goal):]
+        u = min(max((t - te) / paso, 0.0), 1.0)
+        u = u * u * (3 - 2 * u)
+        cur = [a + (b - a) * u for a, b in zip(cur, goal)]
+    return cur
 
 
 def at(orders, t):
@@ -117,7 +138,9 @@ for k in rows:
     data.qpos[free + 3:free + 7] = quat
     data.qpos[adr] = q[k]
     mujoco.mj_kinematics(model, data)
-    look = np.array([x, y, 0.08])
+    dist, azim, elev, alto = camara_en(k * dt, [dist0, azim0, elev0, 0.08], guion.get("camara", []))
+    fwd, right, up = ejes(azim, elev)
+    look = np.array([x, y, alto])
     eye = look - dist * fwd
     im = Image.new("RGB", (W, H), (150, 156, 162))
     dr = ImageDraw.Draw(im)
@@ -148,12 +171,16 @@ for k in rows:
         dr.polygon([tuple(v) for v in hull], fill=FILL[kind], outline=(20, 24, 30))
     t = k * dt
     cara, son = at(guion.get("cara", []), t), [n for ts, n in guion.get("sonidos", []) if 0 <= t - ts < 0.4]
-    dr.text((12, 10), f"{t:5.2f} s", font=FONT, fill=(255, 255, 255))
+    # at the bottom, out of the way of the video's captions at the top
+    y0 = H - 12 - FONT.size * 5.4
+    dr.text((12, y0), f"{t:5.2f} s", font=FONT, fill=(255, 255, 255))
     if cara:
-        dr.text((12, 10 + FONT.size * 1.3), f"face: {cara}", font=FONT, fill=FILL["eye"])
+        dr.text((12, y0 + FONT.size * 1.3), f"face: {cara}", font=FONT, fill=FILL["eye"])
     if son:
-        dr.text((12, 10 + FONT.size * 2.6), f"♪ {son[-1]}", font=FONT, fill=(255, 220, 120))
-    dr.text((W - 12, 10), "esqueleto", font=FONT, fill=(230, 230, 230), anchor="ra")
+        dr.text((12, y0 + FONT.size * 2.6), f"♪ {son[-1]}", font=FONT, fill=(255, 220, 120))
+    if tel := at(guion.get("telefono", []), t):
+        dr.text((12, y0 + FONT.size * 3.9), f"phone: {tel}", font=FONT, fill=(150, 200, 255))
+    dr.text((W - 12, H - 12 - FONT.size * 1.3), "esqueleto", font=FONT, fill=(230, 230, 230), anchor="ra")
     ff.stdin.write(im.tobytes())
 ff.stdin.close()
 ff.wait()

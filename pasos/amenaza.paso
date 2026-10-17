@@ -1,0 +1,8 @@
+# «En guardia» (la batalla del vídeo, 17-oct): las dos tenazas delante y en alto, sacudidas como un boxeador.
+# Ni «arriba» del todo con las dos (vuelca: también son patas) ni de golpe: una tras otra, como el tambor.
+dura 4
+@0 cara enojo
+@0 tenaza_izq tambor_alto en 1
+@0.5 tenaza_der tambor_alto en 1
+@1.5 alternar tenazas guardia_b tambor_alto veces 3 cada 0.5
+@3 tenazas reposo en 1

@@ -14,6 +14,8 @@ each drawn here with no third-party logo or brand (a generic chat bubble, not an
     notificacion  a calendar reminder card
     cargando      charging: a ring filling up
     termostato    smart-home heating dial going down («Jumper, turn down the heating»)
+    arena V1 V2 [hit1|hit2|draw]   «Jumper Arena», the battle from the app (17-oct): both health bars (0-100), a
+                  fire button, and a flash on a hit or the draw. Its arguments go in the state: `telefono arena 100 70 hit2`
 
     imagen(estado, t, w=390, h=844) -> PIL.Image     t: seconds since the state began
     python pantallas.py <dir>                         writes one still of each, for a look
@@ -31,7 +33,7 @@ FONT = "/usr/share/fonts/opentype/inter/Inter-{}.otf"
 CIAN, BLANCO, GRIS = (0, 195, 227), (245, 247, 250), (150, 158, 170)
 VERDE, ROJO = (52, 199, 89), (255, 69, 58)
 ESTADOS = ("reposo", "musica", "musica_fiesta", "llamada", "mensaje", "videollamada", "alarma", "notificacion", "cargando",
-           "termostato")
+           "termostato", "arena")
 
 
 def fuente(peso, px):
@@ -255,13 +257,40 @@ def termostato(w, h, t, s):
     return im, d
 
 
+def arena(w, h, t, s, v1="100", v2="100", evento=""):
+    im = Image.new("RGB", (w, h), (12, 10, 24))
+    d = ImageDraw.Draw(im)
+    for y in range(0, h, int(6 * s)):   # a faint grid: a game, not a utility
+        d.line([(0, y), (w, y)], fill=(20, 18, 40))
+    barra_estado(d, w, s)
+    centrado(d, w, 52 * s, "JUMPER ARENA", fuente("Bold", int(26 * s)), (255, 220, 90))
+    for i, (nom, v, col) in enumerate((("JUMPER", int(v1), CIAN), ("JUMPY", int(v2), (255, 95, 162)))):
+        y = (110 + i * 70) * s
+        d.text((24 * s, y), nom, font=fuente("Bold", int(16 * s)), fill=col)
+        d.rounded_rectangle([24 * s, y + 24 * s, w - 24 * s, y + 44 * s], radius=10 * s, fill=(40, 36, 60))
+        if v > 0:
+            d.rounded_rectangle([24 * s, y + 24 * s, 24 * s + (w - 48 * s) * v / 100, y + 44 * s], radius=10 * s, fill=col)
+        d.text((w - 24 * s, y), f"{v}", font=fuente("Bold", int(16 * s)), fill=BLANCO, anchor="ra")
+    cx, cy = w / 2, h * 0.62   # the fire button, pulsing
+    r = (70 + 6 * math.sin(t * 8)) * s
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(230, 60, 70))
+    centrado(d, w, cy - 14 * s, "FIRE", fuente("Bold", int(26 * s)), BLANCO)
+    if evento in ("hit1", "hit2") and t < 0.8:
+        col = CIAN if evento == "hit2" else (255, 95, 162)
+        centrado(d, w, h * 0.38, "HIT!", fuente("Bold", int((64 + 30 * max(0, 0.3 - t)) * s)), col)
+    if evento == "draw":
+        centrado(d, w, h * 0.36, "DRAW", fuente("Bold", int(72 * s)), (255, 220, 90))
+    return im, d
+
+
 DIBUJO = {e: globals()[e] for e in ESTADOS}
 
 
 def imagen(estado: str, t: float, w: int = 390, h: int = 844) -> Image.Image:
-    if estado not in DIBUJO:
+    nombre, *args = estado.split()
+    if nombre not in DIBUJO:
         raise ValueError(f"telefono {estado}: unknown state; there are {', '.join(ESTADOS)}")
-    return DIBUJO[estado](w, h, max(t, 0.0), w / 390)[0]
+    return DIBUJO[nombre](w, h, max(t, 0.0), w / 390, *args)[0]
 
 
 if __name__ == "__main__":

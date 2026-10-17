@@ -258,6 +258,24 @@ const TABLA: &[(&str, &[Ev])] = &[
             Gorjeo(1150., 950., 0.16),
         ],
     ),
+    // La batalla del vídeo (17-oct): el disparo virtual de la app y el golpe que lo recibe.
+    (
+        "disparo",
+        &[
+            Gorjeo(2600., 700., 0.12),
+            Silencio(0.01),
+            Gorjeo(1800., 600., 0.06),
+        ],
+    ),
+    (
+        "impacto",
+        &[
+            Tenaza(1.0),
+            Gorjeo(420., 140., 0.14),
+            Silencio(0.02),
+            Trino(300., 0.08),
+        ],
+    ),
 ];
 
 /// Otras versiones de una categoría, con su peso: el montaje elige una al azar (con semilla) cada vez que suena,

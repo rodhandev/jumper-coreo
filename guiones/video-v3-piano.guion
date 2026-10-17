@@ -1,0 +1,9 @@
+# video-v3-piano.guion — el segundo Jumper toca el piano en el dúo (17-oct), sobre la balada de 92 bpm, a la vez
+# que el primero toca el violín (pulsos 17-29 de video-v2-romantico.guion): YAMNet oye en esa pista violín y piano,
+# uno a cada robot. Los pulsos de antes, quieto: el montaje empieza el clip en el 17.
+musica /media/rodri/Rodri4sci/jumper-workspace/salidas/musica/jumper-romantico-1.pulsos.json
+@0  cara musica
+@17 paso piano
+@25 paso piano
+@33 paso mecerse
+@37 fin

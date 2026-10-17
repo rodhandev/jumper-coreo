@@ -364,3 +364,11 @@ J1 = 0.0348
 J2 = -0.1459
 J3 = -0.2581
 J4 = 0.0000
+
+# golpe.py: desde tambor_alto, la punta [0, 0, 15] mm (error 2.2 mm)
+[tenaza.guardia_b]
+J0 = -0.8686
+J1 = -2.0223
+J2 = 0.1925
+J3 = -1.6309
+J4 = 0.0000

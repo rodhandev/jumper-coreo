@@ -15,6 +15,10 @@ feet with the shell off the floor. Open loop is the floor of what the robot can 
 reached 0.159 m against this reference's 0.141) does a little better.
 
     python saltos.py <jumper checkout> [--tipo vertical|adelante|lado|giro|saltito|rodar] [--json out.json]
+    python saltos.py <jumper checkout> --grabar TIPO out.npz --de saltos.json [--espejo]
+
+`--grabar` records the jump a search found (saltos.json) as a clip .npz (the same channels as coreo's clips, 50 Hz),
+for montaje.py and the previews; `--espejo` jumps to the other side (or turns the other way).
 """
 
 import json
@@ -220,7 +224,38 @@ def rodar():
     return best
 
 
+def grabar(tipo, dest, de, espejo=False):
+    """The found jump of `tipo` as a clip .npz (coreo's channels), mirrored in y and yaw with `espejo`."""
+    global T_CROUCH
+    sys.path[:0] = [str(repo / "tools")]
+    import import_wbc_dances as dances
+    from tasks.jumper.common.dance.motion import LEG_JOINTS
+
+    p = json.loads(Path(de).read_text())[tipo]["params"]
+    if tipo == "saltito":   # the smallest hop (17-oct): a short crouch and a small push
+        T_CROUCH, p = 0.2, dict(d_c=0.015, d_e=0.04, dx=0.0, dy=0.0, yaw=0.0, push_p=0.9)
+    sg = -1.0 if espejo else 1.0
+    r = saltar(p["d_c"], p["d_e"], p["dx"], sg * p["dy"], sg * p["yaw"], p["push_p"], grabar=True)
+    Q = np.array([q for _, q in r["frames"]])
+    jn = [n for leg in sorted(LEG_JOINTS) for n in LEG_JOINTS[leg]]
+    out = {"dt": np.array(0.02)}
+    for k, n in zip(dances._keys(), jn):
+        out[k] = Q[:, qadr[names.index(n)]]
+    out["body_x"], out["body_y"], out["body_z"] = Q[:, 0], Q[:, 1], Q[:, 2]
+    w = Q[:, 3:7]
+    out["body_roll"] = np.arctan2(2 * (w[:, 0] * w[:, 1] + w[:, 2] * w[:, 3]), 1 - 2 * (w[:, 1] ** 2 + w[:, 2] ** 2))
+    out["body_pitch"] = np.arcsin(np.clip(2 * (w[:, 0] * w[:, 2] - w[:, 3] * w[:, 1]), -1, 1))
+    out["body_yaw"] = np.arctan2(2 * (w[:, 0] * w[:, 3] + w[:, 1] * w[:, 2]), 1 - 2 * (w[:, 2] ** 2 + w[:, 3] ** 2))
+    np.savez(dest, **out)
+    r.pop("frames")
+    print(f"{dest}: {tipo}{' (mirrored)' if espejo else ''}, {len(Q)} rows; " + json.dumps(r, default=lambda o: o.item()))
+
+
 if __name__ == "__main__":
+    if arg("--grabar"):
+        i = sys.argv.index("--grabar")
+        grabar(sys.argv[i + 1], sys.argv[i + 2], arg("--de"), "--espejo" in sys.argv)
+        sys.exit(0)
     tipos = [arg("--tipo")] if arg("--tipo") else ["vertical", "saltito", "adelante", "lado", "giro", "rodar"]
     out = {}
     for t in tipos:

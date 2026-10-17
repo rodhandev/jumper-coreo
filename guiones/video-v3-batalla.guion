@@ -1,0 +1,7 @@
+# video-v3-batalla.guion — la batalla (17-oct), un robot: en guardia, dispara, recibe, esquiva (el salto de lado va
+# aparte, de saltos.py), dispara, recibe. Los dos robots usan este mismo guion desfasado.
+pulso 120
+@0  paso amenaza
+@4  paso disparar
+@7  paso retroceso
+@10 fin

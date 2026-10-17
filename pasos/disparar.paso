@@ -1,0 +1,6 @@
+# «Dispara» (la batalla): apunta con la tenaza izquierda y la sacude con el disparo; el rayo lo pone la app del
+# teléfono (realidad aumentada), el robot sólo apunta.
+dura 3
+@0 tenaza_izq senalar en 1
+@1 alternar tenaza_izq tocar senalar veces 2 cada 0.5
+@2 tenaza_izq reposo en 1

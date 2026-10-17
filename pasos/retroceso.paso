@@ -1,0 +1,8 @@
+# «¡Le dieron!» (la batalla): se echa atrás y se cubre con una tenaza, ojos de estrellas, y se recompone.
+# Las estrellas sólo aquí: al recibir un golpe (Rodhan, 16-oct).
+dura 3
+@0 cara emocionado
+@0 patas apoyo_atras en 0.75
+@0 tenaza_izq tambor_alto en 1
+@1.5 patas de_pie en 1
+@1.5 tenaza_izq reposo en 1.5

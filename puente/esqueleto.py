@@ -44,11 +44,20 @@ from tasks.jumper.common.dance.motion import LEG_JOINTS  # noqa: E402
 z = np.load(clip)
 dt = float(z["dt"])
 names = [n for leg in sorted(LEG_JOINTS) for n in LEG_JOINTS[leg]]
-q = np.stack([z[k] for k in dances._keys()], axis=1).astype(np.float64)
 model = mujoco.MjModel.from_xml_path(str(xml))
 data = mujoco.MjData(model)
-adr = [model.jnt_qposadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, n)] for n in names]
-free = model.jnt_qposadr[next(j for j in range(model.njnt) if model.jnt_type[j] == 0)]
+# a clip (one robot), or a montage (montaje.py: qpos per frame, one robot or more, with its own model)
+MONTAJE = "qpos" in z.files
+if MONTAJE:
+    qp = z["qpos"]
+    n_rows = len(qp)
+    frees = {p: model.jnt_qposadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, p + "floating_base")]
+             for p in z["prefijos"]}
+else:
+    q = np.stack([z[k] for k in dances._keys()], axis=1).astype(np.float64)
+    n_rows = len(q)
+    adr = [model.jnt_qposadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, n)] for n in names]
+    free = model.jnt_qposadr[next(j for j in range(model.njnt) if model.jnt_type[j] == 0)]
 
 # Each visible geom as a few hundred points in its own frame (a mesh's vertices, a box's corners).
 FILL = {"base": (226, 230, 234), "dark": (60, 66, 76), "right": (255, 150, 60), "left": (70, 150, 255),
@@ -118,14 +127,20 @@ def at(orders, t):
 audio = ["-ss", f"{guion.get('musica_desfase') or 0.0:.3f}", "-i", musica, "-shortest", "-c:a", "aac"] if musica else []
 ff = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
                        "-r", str(fps), "-i", "-", *audio, "-pix_fmt", "yuv420p", str(dest)], stdin=subprocess.PIPE)
-rows = np.minimum(np.round(np.arange(0.0, len(q) * dt, 1.0 / fps) / dt).astype(int), len(q) - 1)
+rows = np.minimum(np.round(np.arange(0.0, n_rows * dt, 1.0 / fps) / dt).astype(int), n_rows - 1)
 for k in rows:
-    x, y, zz, roll, pitch, yaw = (float(z[f"body_{a}"][k]) for a in dances.AXES)
-    data.qpos[free:free + 3] = (x, y, zz)
-    quat = np.zeros(4)
-    mujoco.mju_euler2Quat(quat, [roll, pitch, yaw], "xyz")
-    data.qpos[free + 3:free + 7] = quat
-    data.qpos[adr] = q[k]
+    if MONTAJE:
+        data.qpos[:] = qp[k]
+        centro = guion.get("centro", "")
+        pts = [qp[k, f:f + 3] for p, f in frees.items() if centro in ("medio", p)]
+        x, y, zz = np.mean(pts, axis=0)
+    else:
+        x, y, zz, roll, pitch, yaw = (float(z[f"body_{a}"][k]) for a in dances.AXES)
+        data.qpos[free:free + 3] = (x, y, zz)
+        quat = np.zeros(4)
+        mujoco.mju_euler2Quat(quat, [roll, pitch, yaw], "xyz")
+        data.qpos[free + 3:free + 7] = quat
+        data.qpos[adr] = q[k]
     mujoco.mj_kinematics(model, data)
     dist, azim, elev, alto, dx, dy = camara_en(k * dt, BASE, guion.get("camara", []))
     fwd, right, up = ejes(azim, elev)
@@ -159,7 +174,9 @@ for k in rows:
     for _, hull, kind in sorted(polys, key=lambda e: -e[0]):
         dr.polygon([tuple(v) for v in hull], fill=FILL[kind], outline=(20, 24, 30))
     t = k * dt
-    cara, son = at(guion.get("cara", []), t), [n for ts, n in guion.get("sonidos", []) if 0 <= t - ts < 0.4]
+    cara = (" / ".join(filter(None, (at(o, t) for o in guion["caras"].values()))) if "caras" in guion
+            else at(guion.get("cara", []), t))
+    son = [s[1] for s in guion.get("sonidos", []) if 0 <= t - s[0] < 0.4]
     # at the bottom, out of the way of the video's captions at the top
     y0 = H - 12 - FONT.size * 5.4
     dr.text((12, y0), f"{t:5.2f} s", font=FONT, fill=(255, 255, 255))
